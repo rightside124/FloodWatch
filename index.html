@@ -45,28 +45,50 @@
             position: relative;
         }
         .sidebar {
-            width: 400px;
+            width: 100%; /* Default to full width on mobile */
             background-color: #1a2531;
             color: #f8fafc;
             padding: 1.5rem;
             overflow-y: auto;
-            position: relative;
+            position: absolute; /* Position absolutely on mobile */
             z-index: 20;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transform: translateX(-100%); /* Hidden by default */
+            transition: transform 0.3s ease-in-out;
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
-            /* Fix for scrolling: set a height relative to the viewport minus the header height */
-            height: calc(100vh - 64px); 
+        }
+        .sidebar.active {
+            transform: translateX(0); /* Active state is visible */
         }
         #map-container {
             flex: 1;
             position: relative;
             background-color: #e2e8f0;
+            width: 100%; /* Full width on mobile */
+            height: 100%;
         }
         #map {
             width: 100%;
             height: 100%;
+        }
+        
+        /* Desktop styles (>= 768px) */
+        @media (min-width: 768px) {
+            main {
+                flex-direction: row;
+            }
+            .sidebar {
+                width: 400px;
+                position: relative;
+                transform: translateX(0); /* Always visible on desktop */
+                flex-shrink: 0;
+                height: calc(100vh - 64px);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
         }
         .info-box {
             background-color: #2a3847;
@@ -278,13 +300,17 @@
 </head>
 <body>
     <header class="shadow-lg">
+        <!-- Mobile menu toggle button, hidden on desktop -->
+        <button id="toggle-sidebar-btn" class="text-white text-xl md:hidden">
+            <i class="fas fa-bars"></i>
+        </button>
         <h1 class="text-2xl font-bold">PH Flood & Weather Monitor</h1>
         <div class="flex items-center space-x-4">
             <span id="current-time" class="text-white font-medium"></span>
         </div>
     </header>
 
-    <main>
+    <main class="md:flex-row flex-col">
         <!-- Left Sidebar (Information & Controls) -->
         <aside class="sidebar" id="sidebar">
             <div class="tab-button-group">
@@ -494,9 +520,18 @@
             // Interval for repeating alarm sound
             alarmInterval: null,
             mapLayers: {
-                rainfall: new ol.layer.Vector({ source: new ol.source.Vector() }),
-                tcws: new ol.layer.Vector({ source: new ol.source.Vector() }),
-                locationMarker: new ol.layer.Vector({ source: new ol.source.Vector() })
+                rainfall: new ol.layer.Vector({ 
+                    source: new ol.source.Vector(),
+                    style: new ol.style.Style({})
+                }),
+                tcws: new ol.layer.Vector({ 
+                    source: new ol.source.Vector(),
+                    style: new ol.style.Style({})
+                }),
+                locationMarker: new ol.layer.Vector({ 
+                    source: new ol.source.Vector(),
+                    style: new ol.style.Style({})
+                })
             },
             precipitationHistory: []
         };
@@ -540,7 +575,9 @@
         const alarmHeightValueEl = document.getElementById('alarm-height-value');
         const testAlarmBtn = document.getElementById('test-alarm-btn');
         const testAlarmWarningBtn = document.getElementById('test-alarm-warning-btn');
-        
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const sidebar = document.getElementById('sidebar');
+
         // --- UI Functions ---
         function showCustomModal(title, message, options = {}) {
             const { showCloseButton = true, isWelcome = false } = options;
@@ -739,8 +776,13 @@
             });
 
             map.on('singleclick', function(event) {
-                // Use hitTolerance to make clicking on lines easier
-                map.forEachFeatureAtPixel(event.pixel, {hitTolerance: 5}, function(feature) {
+                // The fix: Use a layer filter to ensure we only check for features on the roads layer.
+                map.forEachFeatureAtPixel(event.pixel, {
+                    hitTolerance: 5,
+                    layerFilter: function(layer) {
+                        return layer === roadsLayer;
+                    }
+                }, function(feature) {
                     const properties = feature.getProperties();
                     if (properties && properties.name) {
                         showCustomModal(properties.name, `Current Flood Height: ${properties.flood_level ? properties.flood_level.toFixed(2) : '0.00'}m`);
@@ -1241,6 +1283,16 @@
             resetSimulationBtn.addEventListener('click', resetSimulation);
             testAlarmBtn.addEventListener('click', testAlarm);
             testAlarmWarningBtn.addEventListener('click', testAlarmAndWarning);
+            
+            // Mobile sidebar toggle logic
+            toggleSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                if (sidebar.classList.contains('active')) {
+                    toggleSidebarBtn.innerHTML = '<i class="fas fa-times"></i>';
+                } else {
+                    toggleSidebarBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
 
             precipitationRateInput.addEventListener('input', (e) => {
                 state.precipitationRate = parseInt(e.target.value);
