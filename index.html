@@ -10,10 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Leaflet.js for interactive map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQjR7o6sNBLl1c04kL2Hw+f/K9eE5B2c=" crossorigin=""/>
+    <!-- OpenLayers CSS for map styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
+    <!-- OpenLayers JS for interactive map functionality -->
+    <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
+    <!-- Tone.js for sound effects -->
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
     <style>
-        /* Base styles for light mode */
+        /* Base styles for dark mode theme */
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
@@ -22,17 +26,19 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #f8fafc; /* Light background */
-            color: #1a202c; /* Dark text */
+            background-color: #0d141e;
+            color: #f8fafc;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         header {
-            background-color: #2563eb; /* Blue-600 */
+            background-color: #1a2531;
             color: white;
             padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            z-index: 10;
         }
         main {
             display: flex;
@@ -40,31 +46,17 @@
             position: relative;
         }
         .sidebar {
-            width: 300px;
-            background-color: #e2e8f0; /* Blue-gray-200 */
-            color: #1a202c;
+            width: 400px;
+            background-color: #1a2531;
+            color: #f8fafc;
             padding: 1.5rem;
             overflow-y: auto;
             position: relative;
             z-index: 20;
             flex-shrink: 0;
-        }
-        .right-panel {
-            width: 300px;
-            background-color: #e2e8f0;
-            color: #1a202c;
-            padding: 1.5rem;
-            overflow-y: auto;
-            transition: transform 0.3s ease-in-out;
-            position: absolute;
-            top: 0;
-            right: 0;
-            height: 100%;
-            transform: translateX(100%);
-            z-index: 20;
-        }
-        .right-panel.open {
-            transform: translateX(0);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
         }
         #map-container {
             flex: 1;
@@ -76,16 +68,22 @@
             height: 100%;
         }
         .info-box {
-            background-color: #fff;
-            border: 1px solid #cbd5e1; /* Slate-300 */
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background-color: #2a3847;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .info-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
         }
         .info-box h3, .info-box h4 {
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #f8fafc;
         }
         .input-group {
             margin-bottom: 1rem;
@@ -94,38 +92,40 @@
             display: block;
             font-weight: 500;
             margin-bottom: 0.25rem;
+            color: #cbd5e1;
         }
-        .input-group input[type="range"], .input-group input[type="number"], .input-group input[type="text"], .input-group input[type="datetime-local"], .input-group select {
+        .input-group input[type="range"], .input-group input[type="number"], .input-group select {
             width: 100%;
             border-radius: 0.375rem;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #4a5568;
             padding: 0.5rem 0.75rem;
+            background-color: #3e4a57;
+            color: #f8fafc;
+        }
+        .input-group input[type="checkbox"] {
+            margin-right: 0.5rem;
         }
         .button {
             display: inline-block;
-            background-color: #2563eb;
+            background-color: #0d9488; /* Teal-600 */
             color: white;
             font-weight: 600;
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
             text-align: center;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .button:hover {
-            background-color: #1d4ed8;
-        }
-        .btn-green {
-            background-color: #10b981;
-        }
-        .btn-green:hover {
-            background-color: #059669;
+            background-color: #0f766e; /* Teal-700 */
+            transform: translateY(-1px);
         }
         .btn-red {
-            background-color: #ef4444;
+            background-color: #ef4444; /* Red-500 */
         }
         .btn-red:hover {
-            background-color: #dc2626;
+            background-color: #dc2626; /* Red-600 */
         }
         .custom-modal-overlay {
             position: fixed;
@@ -140,751 +140,852 @@
             z-index: 50;
         }
         .custom-modal {
-            background-color: #fff;
+            background-color: #2a3847;
             padding: 2rem;
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
             width: 90%;
             max-width: 500px;
             text-align: center;
-        }
-        .dark-mode {
-            background-color: #1a202c;
             color: #f8fafc;
-        }
-        .dark-mode .sidebar, .dark-mode .right-panel {
-            background-color: #2d3748;
-        }
-        .dark-mode .info-box {
-            background-color: #2d3748;
-            border-color: #4a5568;
-        }
-        .dark-mode .info-box h3 {
-            color: #f8fafc;
-        }
-        .dark-mode .input-group input, .dark-mode .input-group select {
-            background-color: #4a5568;
-            color: #f8fafc;
-            border-color: #4a5568;
-        }
-        .dark-mode header {
-            background-color: #1d4ed8;
-        }
-        .dark-mode .button {
-            background-color: #3b82f6;
-        }
-        .dark-mode .button:hover {
-            background-color: #2563eb;
-        }
-        /* Mobile styles */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                top: 0;
-                left: 0;
-                height: 100%;
-                transform: translateX(-100%);
-                box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-        }
-        /* Style for the rain effect */
-        .rain {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            pointer-events: none;
-        }
-        .drop {
-            position: absolute;
-            background-color: #60a5fa; /* Blue-400 */
-            width: 2px;
-            height: 20px;
-            animation: fall linear infinite;
-        }
-        @keyframes fall {
-            to {
-                transform: translateY(100vh);
-            }
-        }
-        .evacuation-warning {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #dc2626; /* Red-600 */
-            color: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            text-align: center;
-            font-size: 2rem;
-            font-weight: bold;
-            box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
-            z-index: 100;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.05); }
-            100% { transform: translate(-50%, -50%) scale(1); }
-        }
-        #alarm-sound {
-            display: none; /* Hide the audio element */
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-top: 0.5rem;
-        }
-        .color-box {
-            width: 1.25rem;
-            height: 1.25rem;
-            border-radius: 0.25rem;
-            margin-right: 0.5rem;
         }
         .warning-box {
-            background-color: #ffffe0;
-            border-left: 4px solid #f0ad4e;
+            background-color: #2a3847;
+            border-left: 4px solid #ef4444;
             padding: 0.75rem;
             border-radius: 0.25rem;
             margin-bottom: 0.75rem;
         }
-        .warning-box.yellow {
-            background-color: #fffde7;
-            border-color: #ffc107;
-        }
-        .warning-box.orange {
-            background-color: #fff3e0;
-            border-color: #ff9800;
-        }
-        .warning-box.red {
-            background-color: #ffebee;
-            border-color: #f44336;
-        }
+        .warning-box.yellow { border-color: #eab308; }
+        .warning-box.orange { border-color: #f97316; }
+        .warning-box.red { border-color: #ef4444; }
         .warning-title {
             font-weight: bold;
-            color: #333;
+            color: #f8fafc;
         }
-        .warning-box.yellow .warning-title { color: #f57f17; }
-        .warning-box.orange .warning-title { color: #e65100; }
-        .warning-box.red .warning-title { color: #c62828; }
         .warning-description {
             font-size: 0.875rem;
-            color: #555;
+            color: #cbd5e1;
         }
-        .dark-mode .warning-box {
-            background-color: #2d3748;
+        .forecast-box {
+            background-color: #2a3847;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
         }
-        .dark-mode .warning-title, .dark-mode .warning-description {
-            color: #f8fafc;
+        .forecast-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #0d9488;
+            margin-top: 0.5rem;
+        }
+        .forecast-label {
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+        .forecast-unit {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        #road-selection-container {
+            margin-bottom: 1.5rem;
+        }
+        .tab-button-group {
+            display: flex;
+            width: 100%;
+            margin-bottom: 1.5rem;
+            background-color: #2a3847;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            color: #cbd5e1;
+        }
+        .tab-button.active {
+            background-color: #0d9488;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .map-control-btn {
+            background-color: #1a2531;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.2s;
+        }
+        .map-control-btn:hover {
+            background-color: #2a3847;
+        }
+        .map-controls-container {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+        .map-legend {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background: rgba(42, 56, 71, 0.8);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+            border: 1px solid #4a5568;
         }
     </style>
 </head>
 <body>
-    <header>
+    <header class="shadow-lg">
+        <h1 class="text-2xl font-bold">PH Flood & Weather Monitor</h1>
         <div class="flex items-center space-x-4">
-            <button id="menu-toggle-btn" class="text-white text-2xl lg:hidden"><i class="fas fa-bars"></i></button>
-            <h1 class="text-2xl font-bold">PH Flood & Weather Monitor</h1>
-        </div>
-        <div class="flex items-center space-x-4">
-            <div id="current-time" class="text-white font-medium"></div>
-            <button id="dark-mode-toggle" class="text-white text-2xl"><i class="fas fa-moon"></i></button>
-            <button id="settings-toggle-btn" class="text-white text-2xl"><i class="fas fa-cog"></i></button>
+            <span id="current-time" class="text-white font-medium"></span>
         </div>
     </header>
 
     <main>
         <!-- Left Sidebar (Information & Controls) -->
         <aside class="sidebar" id="sidebar">
-            <h2 class="text-xl font-bold mb-4">Information & Controls</h2>
-            <div class="info-box">
-                <h3>Area Information</h3>
-                <div class="input-group">
-                    <label for="user-location-input">Your Location:</label>
-                    <select id="user-location-input" class="w-full rounded-md border border-gray-300 p-2">
-                        <option value="Manila">Manila</option>
-                        <option value="Cebu">Cebu</option>
-                        <option value="Bacolod">Bacolod</option>
-                    </select>
+            <div class="tab-button-group">
+                <button class="tab-button active" data-tab="main">Main</button>
+                <button class="tab-button" data-tab="forecast">Forecast</button>
+                <button class="tab-button" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Main Tab Content -->
+            <div id="main" class="tab-content active">
+                <div class="info-box flex flex-col items-center">
+                    <h3 class="text-center">Current Status</h3>
+                    <p class="text-white text-xl font-bold mt-2">Current Flood Height</p>
+                    <p class="text-5xl font-extrabold text-[#0d9488]"><span id="current-flood-height">0.00</span><span class="text-2xl font-semibold">m</span></p>
+                    <p class="text-lg font-semibold mt-4">Current Weather</p>
+                    <p class="text-sm">Temp: <span id="current-temp">0.0</span>°C | Humidity: <span id="current-humidity">0</span>%</p>
+                    <p class="text-sm mt-2">Total Precipitation: <span id="total-precipitation">0.00</span> mm</p>
                 </div>
-                <div class="flex flex-col space-y-2">
-                    <button id="check-location-btn" class="button btn-green">Check My Location</button>
+
+                <div class="info-box">
+                    <h3 class="text-center">Warnings & Alerts</h3>
+                    <div id="warnings-log" class="text-sm space-y-2">
+                        <div class="p-2 rounded-md text-sm warning-box red">
+                            <p class="warning-title">App Status</p>
+                            <p class="warning-description">Please wait for roads to load...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="info-box">
-                <h3>Map Layers</h3>
-                <div class="flex flex-col space-y-2">
-                    <button id="toggle-rainfall-warnings-btn" class="button">Toggle Rainfall Warnings</button>
-                    <button id="toggle-tcws-btn" class="button">Toggle TCWS</button>
-                    <button id="toggle-class-suspension-btn" class="button">Toggle Class Suspension</button>
+            <!-- Forecast Tab Content -->
+            <div id="forecast" class="tab-content">
+                <div class="info-box">
+                    <h3 class="text-center">Rainfall Forecast</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-center">
+                            <p class="text-xl font-bold">Next 3 hrs</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-3hr">0mm</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xl font-bold">Next 6 hrs</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-6hr">0mm</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xl font-bold">Next 12 hrs</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-12hr">0mm</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="info-box mt-4">
-                <h3>Map Legend</h3>
-                <div class="legend-item"><div class="color-box bg-green-500"></div><p>Normal</p></div>
-                <div class="legend-item"><div class="color-box bg-yellow-500"></div><p>Minor Flooding</p></div>
-                <div class="legend-item"><div class="color-box bg-orange-500"></div><p>Major Flooding</p></div>
-                <div class="legend-item"><div class="color-box bg-red-500"></div><p>Evacuation Level</p></div>
-            </div>
-            
-            <div class="info-box mt-4">
-                <h3>Latest Warnings</h3>
-                <div id="warnings-log" class="text-sm space-y-2">
-                    <!-- Warnings will be logged here -->
-                </div>
-            </div>
-        </aside>
-
-        <!-- Right Panel (Simulation Controls) -->
-        <aside class="right-panel" id="right-panel">
-            <h2 class="text-xl font-bold mb-4">Simulation Control</h2>
-            <div class="info-box">
-                <h3>PAGASA Warnings</h3>
-                <div id="pagasa-warnings-log" class="text-sm space-y-2">
-                    <!-- PAGASA warnings will be displayed here -->
-                </div>
-            </div>
-            <div class="info-box">
-                <h3>Manual Controls</h3>
-                <div class="input-group">
-                    <label for="precipitation-rate">Precipitation Rate: <span id="precipitation-value">0</span> mm/hr</label>
-                    <input type="range" id="precipitation-rate" min="0" max="100" value="0">
-                </div>
-                <div class="input-group">
-                    <label for="evacuation-threshold-input">Evacuation Threshold (m):</label>
-                    <input type="number" id="evacuation-threshold-input" min="0" step="0.1" value="1.0">
-                </div>
-                <div class="flex items-center space-x-2">
-                    <input type="checkbox" id="alarm-toggle" class="form-checkbox">
-                    <label for="alarm-toggle">Enable Alarm Sound</label>
+                <div class="info-box">
+                    <h3 class="text-center">PAGASA Advisories</h3>
+                    <div id="pagasa-advisories" class="space-y-4">
+                        <p class="text-sm text-center text-gray-400">Advisories will appear here during a simulation.</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-col space-y-2 mt-4">
-                <button id="start-simulation-btn" class="button btn-green w-full">Start Simulation</button>
-                <button id="reset-simulation-btn" class="button w-full">Reset Simulation</button>
+            <!-- Settings Tab Content -->
+            <div id="settings" class="tab-content">
+                <div class="info-box">
+                    <h3 class="text-center">Simulation Controls</h3>
+                    <div class="input-group">
+                        <label for="simulation-duration">Simulation Duration:</label>
+                        <div class="flex space-x-2">
+                            <input type="number" id="simulation-duration" min="1" value="1" class="w-2/3">
+                            <select id="duration-unit" class="w-1/3 rounded-md p-2">
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                                <option value="days">Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="session-type">Session Type:</label>
+                        <select id="session-type" class="w-full rounded-md p-2">
+                            <option value="auto">Auto Simulation</option>
+                            <option value="rain">Rain Event</option>
+                            <option value="thunderstorm">Thunderstorm</option>
+                            <option value="tropical-cyclone">Tropical Cyclone</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="precipitation-rate">Base Precipitation Rate: <span id="precipitation-value">0</span> mm/hr</label>
+                        <input type="range" id="precipitation-rate" min="0" max="100" value="0">
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <label for="random-precipitation" class="text-white">Random Precipitation:</label>
+                        <input type="checkbox" id="random-precipitation" class="form-checkbox h-5 w-5 text-teal-600 rounded-full" checked>
+                    </div>
+                    <div class="flex justify-center mt-4">
+                        <button id="start-simulation-btn" class="button w-full">Start Simulation</button>
+                    </div>
+                    <div class="flex justify-center mt-2">
+                        <button id="reset-simulation-btn" class="button btn-red w-full">Reset Simulation</button>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3 class="text-center">Map & Location Settings</h3>
+                    <div id="location-select-container" class="input-group">
+                        <label for="user-location-select">Your Location:</label>
+                        <select id="user-location-select" class="w-full rounded-md p-2"></select>
+                    </div>
+                    <div id="road-selection-container" class="input-group">
+                        <label for="road-detail-select">Road Details:</label>
+                        <select id="road-detail-select" class="w-full rounded-md p-2">
+                            <option value="all">Load All Roads</option>
+                            <option value="highways">Load Highways Only</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </aside>
 
         <!-- Main content area for the map -->
         <div id="map-container">
             <div id="map"></div>
-            <!-- Rain effect container -->
-            <div id="rain-container" class="rain"></div>
-            <!-- Evacuation warning element -->
-            <div id="evacuation-warning" class="evacuation-warning">
-                EVACUATE NOW!
+            
+            <div class="map-controls-container">
+                <button id="toggle-rainfall-warnings" class="map-control-btn"><i class="fas fa-cloud-showers-heavy"></i></button>
+                <button id="toggle-tcws" class="map-control-btn"><i class="fas fa-wind"></i></button>
+                <button id="toggle-location-marker" class="map-control-btn"><i class="fas fa-map-marker-alt"></i></button>
             </div>
             
-            <!-- Map overlay info box -->
-            <div class="absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-white dark:bg-gray-700 rounded-lg shadow-lg p-4 z-10 transition-transform transform">
-                <h3 class="text-lg font-bold">Current Status</h3>
-                <p><strong>Current Time:</strong> <span id="current-simulation-time"></span></p>
-                <p><strong>Current Flood Height:</strong> <span id="current-flood-height" class="font-semibold">0.00</span> m</p>
-                <p><strong>Precipitation Rate:</strong> <span id="current-precipitation-rate" class="font-semibold">0</span> mm/hr</p>
-                <p><strong>Location:</strong> <span id="current-location" class="font-semibold">Manila</span></p>
+            <!-- Map Legend -->
+            <div class="map-legend">
+                <p class="font-bold mb-2">Flood Legend</p>
+                <div class="legend-item"><div class="legend-color" style="background-color: #eab308;"></div> Minor Flooding (0.2m+)</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: #f97316;"></div> Moderate Flooding (0.5m+)</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: #ef4444;"></div> Major Flooding (1.0m+)</div>
+            </div>
+
+            <!-- Custom modal for messages and warnings -->
+            <div id="custom-modal-overlay" class="custom-modal-overlay">
+                <div id="custom-modal" class="custom-modal">
+                    <div id="modal-content">
+                        <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
+                        <p id="modal-message" class="text-gray-400"></p>
+                    </div>
+                    <button id="modal-close-btn" class="button mt-4">OK</button>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal for messages and warnings -->
-    <div id="custom-modal-overlay" class="custom-modal-overlay">
-        <div id="custom-modal" class="custom-modal">
-            <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
-            <p id="modal-message" class="text-gray-600"></p>
-            <button id="modal-close-btn" class="button mt-4">OK</button>
-        </div>
-    </div>
-    
-    <!-- Audio element for the alarm sound -->
-    <audio id="alarm-sound">
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-
     <script>
-        // Use a simple global state object to manage the application data
+        // --- State Management ---
         const state = {
             currentFloodHeight: 0,
             precipitationRate: 0,
+            totalPrecipitation: 0,
             isSimulationRunning: false,
             simulationInterval: null,
-            userLocation: 'Manila',
-            evacuationThreshold: 1.0,
-            isEvacuationWarningActive: false,
-            simulationTime: new Date(),
+            simulationTime: 0, // in seconds
+            simulationDuration: 60 * 60, // default 1 hour in seconds
+            sessionType: 'auto',
+            autoMode: true,
+            userLocation: 'Entire Metro Manila',
+            forecast: {
+                temp: 28,
+                humidity: 75,
+                flood: { h3: 0, h6: 0, h12: 0 },
+                advisories: { rainfall: 'None', tcws: 'None' }
+            },
+            lastRainfallWarning: 'None',
+            lastTcwsWarning: 'None',
+            alertTriggered: false,
+            alertSound: new Tone.MembraneSynth().toDestination(),
+            mapLayers: {
+                rainfall: new ol.layer.Vector({ source: new ol.source.Vector() }),
+                tcws: new ol.layer.Vector({ source: new ol.source.Vector() }),
+                locationMarker: new ol.layer.Vector({ source: new ol.source.Vector() })
+            }
         };
-
-        // DOM Elements
+        
+        // --- DOM Elements ---
         const startSimulationBtn = document.getElementById('start-simulation-btn');
         const resetSimulationBtn = document.getElementById('reset-simulation-btn');
         const currentFloodHeightEl = document.getElementById('current-flood-height');
+        const totalPrecipitationEl = document.getElementById('total-precipitation');
         const precipitationRateInput = document.getElementById('precipitation-rate');
         const precipitationValueEl = document.getElementById('precipitation-value');
-        const evacuationWarningEl = document.getElementById('evacuation-warning');
-        const evacuationThresholdInput = document.getElementById('evacuation-threshold-input');
-        const alarmToggle = document.getElementById('alarm-toggle');
-        const alarmSound = document.getElementById('alarm-sound');
-        const currentTimeEl = document.getElementById('current-time');
-        const currentSimulationTimeEl = document.getElementById('current-simulation-time');
         const warningsLogEl = document.getElementById('warnings-log');
-        const rainContainer = document.getElementById('rain-container');
-        const currentPrecipitationRateEl = document.getElementById('current-precipitation-rate');
-        const currentLocationEl = document.getElementById('current-location');
-        const pagasaWarningsLog = document.getElementById('pagasa-warnings-log');
-
-        // New UI elements
-        const settingsToggleBtn = document.getElementById('settings-toggle-btn');
-        const rightPanel = document.getElementById('right-panel');
-        const checkLocationBtn = document.getElementById('check-location-btn');
-        const userLocationInput = document.getElementById('user-location-input');
-        
-        // Map Layer Toggle Buttons
-        const toggleRainfallWarningsBtn = document.getElementById('toggle-rainfall-warnings-btn');
-        const toggleTcwsBtn = document.getElementById('toggle-tcws-btn');
-        const toggleClassSuspensionBtn = document.getElementById('toggle-class-suspension-btn');
-        
-        // Custom Modal Logic
+        const roadDetailSelect = document.getElementById('road-detail-select');
+        const sessionTypeSelect = document.getElementById('session-type');
+        const simulationDurationInput = document.getElementById('simulation-duration');
+        const durationUnitSelect = document.getElementById('duration-unit');
+        const randomPrecipitationCheckbox = document.getElementById('random-precipitation');
+        const currentTempEl = document.getElementById('current-temp');
+        const currentHumidityEl = document.getElementById('current-humidity');
+        const forecast3hrEl = document.getElementById('forecast-3hr');
+        const forecast6hrEl = document.getElementById('forecast-6hr');
+        const forecast12hrEl = document.getElementById('forecast-12hr');
+        const pagasaAdvisoriesEl = document.getElementById('pagasa-advisories');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const toggleRainfallWarningsBtn = document.getElementById('toggle-rainfall-warnings');
+        const toggleTcwsBtn = document.getElementById('toggle-tcws');
+        const toggleLocationMarkerBtn = document.getElementById('toggle-location-marker');
         const customModalOverlay = document.getElementById('custom-modal-overlay');
+        const customModal = document.getElementById('custom-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        function showCustomModal(title, message) {
+        // --- UI Functions ---
+        function showCustomModal(title, message, showCloseButton = true) {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
             customModalOverlay.style.display = 'flex';
+            if (showCloseButton) {
+                modalCloseBtn.style.display = 'block';
+            } else {
+                modalCloseBtn.style.display = 'none';
+            }
         }
 
         function closeCustomModal() {
             customModalOverlay.style.display = 'none';
         }
 
-        // --- Map Initialization ---
-        let map;
-        let floodMarker;
-        let roadsLayer;
-        let rainfallWarningLayer;
-        let tcwsLayer;
-        let classSuspensionLayer;
-
-        const simulatedRoadsGeoJSON = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": { "name": "EDSA", "flood_level": 0.0, "location": "Manila" },
-                    "geometry": { "type": "LineString", "coordinates": [[14.6091, 121.0560], [14.5824, 121.0531], [14.5501, 121.0454]] }
-                },
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Roxas Boulevard", "flood_level": 0.0, "location": "Manila" },
-                    "geometry": { "type": "LineString", "coordinates": [[14.5684, 120.9754], [14.5595, 120.9818], [14.5447, 120.9840]] }
-                },
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Taft Avenue", "flood_level": 0.0, "location": "Manila" },
-                    "geometry": { "type": "LineString", "coordinates": [[14.5888, 120.9926], [14.5663, 120.9901], [14.5540, 120.9880]] }
-                },
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Osmeña Boulevard", "flood_level": 0.0, "location": "Cebu" },
-                    "geometry": { "type": "LineString", "coordinates": [[10.3175, 123.8913], [10.3010, 123.8860], [10.2912, 123.8830]] }
-                },
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Lacson Street", "flood_level": 0.0, "location": "Bacolod" },
-                    "geometry": { "type": "LineString", "coordinates": [[10.6865, 122.9515], [10.6720, 122.9550], [10.6580, 122.9610]] }
-                }
-            ]
-        };
-
-        const simulatedWarningAreas = {
-            rainfall: {
-                "type": "FeatureCollection",
-                "features": [{
-                    "type": "Feature",
-                    "properties": { "name": "Rainfall Warning Area" },
-                    "geometry": { "type": "Polygon", "coordinates": [[
-                        [14.65, 120.9], [14.7, 121.1], [14.5, 121.2], [14.45, 121.0], [14.65, 120.9]
-                    ]]}
-                }]
-            },
-            tcws: {
-                 "type": "FeatureCollection",
-                "features": [{
-                    "type": "Feature",
-                    "properties": { "name": "TCWS Area" },
-                    "geometry": { "type": "Polygon", "coordinates": [[
-                        [14.7, 120.8], [14.8, 121.0], [14.6, 121.2], [14.5, 121.0], [14.7, 120.8]
-                    ]]}
-                }]
-            },
-            classSuspension: {
-                "type": "FeatureCollection",
-                "features": [{
-                    "type": "Feature",
-                    "properties": { "name": "Class Suspension Area" },
-                    "geometry": { "type": "Polygon", "coordinates": [[
-                        [14.5, 120.9], [14.6, 121.0], [14.5, 121.1], [14.4, 121.0], [14.5, 120.9]
-                    ]]}
-                }]
-            }
-        };
-
-        function styleRoads(feature) {
-            let color = '#4CAF50'; // Green for normal
-            if (feature.properties.flood_level > 0.8) {
-                color = '#F44336'; // Red for evacuation
-            } else if (feature.properties.flood_level > 0.5) {
-                color = '#FF5722'; // Orange for major
-            } else if (feature.properties.flood_level > 0.2) {
-                color = '#FFC107'; // Yellow for minor
-            }
-            return {
-                color: color,
-                weight: 5,
-                opacity: 0.8
-            };
-        }
-        
-        function renderRoads() {
-            if (roadsLayer) {
-                map.removeLayer(roadsLayer);
-            }
+        function showEvacuationModal() {
+            modalTitle.textContent = "EVACUATION ALERT!";
+            modalMessage.textContent = "Immediate evacuation is advised due to severe flooding. Do you want to contact emergency services?";
+            customModalOverlay.style.display = 'flex';
+            modalCloseBtn.style.display = 'none';
             
-            roadsLayer = L.geoJSON(simulatedRoadsGeoJSON, {
-                style: styleRoads,
-                onEachFeature: function(feature, layer) {
-                    layer.bindPopup(`<b>${feature.properties.name}</b><br>Flood Level: ${feature.properties.flood_level.toFixed(2)}m`);
-                }
-            }).addTo(map);
+            const emergencyButton = document.createElement('button');
+            emergencyButton.textContent = "Contact Emergency Services";
+            emergencyButton.className = "button btn-red mt-4 mr-2";
+            emergencyButton.onclick = () => {
+                showCallingScreen();
+            };
+
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = "Dismiss";
+            cancelButton.className = "button mt-4";
+            cancelButton.onclick = () => {
+                closeCustomModal();
+            };
+
+            customModal.appendChild(emergencyButton);
+            customModal.appendChild(cancelButton);
         }
+
+        function showCallingScreen() {
+            modalTitle.textContent = "Calling 911...";
+            modalMessage.textContent = "Connecting you to the nearest emergency response team. Please stay calm and wait for assistance.";
+            modalCloseBtn.style.display = 'none';
+            customModal.querySelector('.button').remove();
+            customModal.querySelector('.button').remove();
+        }
+
+        function switchTab(tabName) {
+            tabContents.forEach(content => content.classList.remove('active'));
+            tabButtons.forEach(button => button.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab-button[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        function updateUI() {
+            currentFloodHeightEl.textContent = state.currentFloodHeight.toFixed(2);
+            totalPrecipitationEl.textContent = state.totalPrecipitation.toFixed(2);
+            precipitationValueEl.textContent = state.precipitationRate.toFixed(1);
+            currentTempEl.textContent = state.forecast.temp.toFixed(1);
+            currentHumidityEl.textContent = state.forecast.humidity.toFixed(0);
+        }
+
+        function updateForecastUI() {
+            forecast3hrEl.textContent = state.forecast.flood.h3.toFixed(2) + 'mm';
+            forecast6hrEl.textContent = state.forecast.flood.h6.toFixed(2) + 'mm';
+            forecast12hrEl.textContent = state.forecast.flood.h12.toFixed(2) + 'mm';
+            updatePAGASAAdvisories();
+        }
+
+        // --- Map Logic ---
+        let map;
+        let roadsLayer;
+        let locationLayer;
+
+        const manilaCoords = [121.0, 14.6];
+        const manilaExtent = ol.proj.fromLonLat([120.95, 14.45]).concat(ol.proj.fromLonLat([121.15, 14.75]));
 
         function initializeMap() {
-            if (map) {
-                map.remove();
-            }
+            const view = new ol.View({
+                center: ol.proj.fromLonLat(manilaCoords),
+                zoom: 12,
+                extent: manilaExtent,
+                constrainResolution: true,
+                smoothExtentConstraint: false
+            });
 
-            const manilaCoords = [14.5995, 120.9842];
-            map = L.map('map').setView(manilaCoords, 10);
+            roadsLayer = new ol.layer.Vector({
+                source: new ol.source.Vector(),
+                style: function (feature) {
+                    const floodLevel = feature.get('flood_level') || 0;
+                    let color = '#374151'; // Darker gray for no flood
+                    let width = 3;
+                    
+                    if (feature.get('name') === state.userLocation) {
+                        width = 5;
+                        color = '#0d9488'; // Teal for user's road
+                    }
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+                    if (floodLevel >= 1.0) {
+                        color = '#ef4444'; // Red for major flood
+                    } else if (floodLevel >= 0.5) {
+                        color = '#f97316'; // Orange for moderate flood
+                    } else if (floodLevel >= 0.2) {
+                        color = '#eab308'; // Yellow for minor flood
+                    }
 
-            floodMarker = L.marker(manilaCoords).addTo(map)
-                .bindPopup("Your Location: Manila").openPopup();
+                    return new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: color,
+                            width: width,
+                        }),
+                    });
+                },
+            });
+
+            locationLayer = new ol.layer.Vector({
+                source: new ol.source.Vector(),
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 7,
+                        fill: new ol.style.Fill({ color: '#3b82f6' }),
+                        stroke: new ol.style.Stroke({ color: 'white', width: 2 })
+                    }),
+                })
+            });
+
+            map = new ol.Map({
+                target: 'map',
+                layers: [
+                    new ol.layer.Tile({ source: new ol.source.OSM() }),
+                    roadsLayer,
+                    locationLayer,
+                    state.mapLayers.rainfall,
+                    state.mapLayers.tcws,
+                ],
+                view: view,
+            });
+
+            map.on('singleclick', function(event) {
+                map.forEachFeatureAtPixel(event.pixel, function(feature) {
+                    const properties = feature.getProperties();
+                    if (properties && properties.name) {
+                        showCustomModal(properties.name, `Current Flood Height: ${properties.flood_level ? properties.flood_level.toFixed(2) : '0.00'}m`);
+                    }
+                });
+            });
+
+            loadAllRoads();
+        }
+
+        async function loadAllRoads() {
+            showCustomModal("Loading Roads...", "Please wait while we fetch detailed road data for Metro Manila. This may take a moment.", false);
             
-            renderRoads();
-            updateMapLocation();
-        }
+            const roadType = roadDetailSelect.value;
+            const latMin = 14.45;
+            const lonMin = 120.95;
+            const latMax = 14.75;
+            const lonMax = 121.15;
 
-        function updateMapLocation() {
-            const locations = {
-                'Manila': [14.5995, 120.9842],
-                'Cebu': [10.3157, 123.8854],
-                'Bacolod': [10.6865, 122.9515],
-            };
-            const newCoords = locations[state.userLocation] || locations['Manila'];
-
-            if (map && floodMarker) {
-                floodMarker.setLatLng(newCoords);
-                floodMarker.setPopupContent(`Your Location: ${state.userLocation}`).openPopup();
-                map.setView(newCoords, 10);
+            let query;
+            if (roadType === 'highways') {
+                query = `[out:json][timeout:90];(way["highway"~"^(motorway|trunk|primary|secondary)$"](${latMin},${lonMin},${latMax},${lonMax}););out body;>;out skel qt;`;
+            } else {
+                query = `[out:json][timeout:90];(way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|service|unclassified|living_street|track|path)$"](${latMin},${lonMin},${latMax},${lonMax}););out body;>;out skel qt;`;
             }
-            currentLocationEl.textContent = state.userLocation;
+            
+            const overpassUrl = "https://overpass-api.de/api/interpreter";
+
+            try {
+                const response = await fetch(overpassUrl, { method: 'POST', body: query });
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const data = await response.json();
+                const features = [];
+                const roads = [];
+                const nodes = new Map(data.elements.filter(el => el.type === 'node').map(el => [el.id, el]));
+
+                data.elements.forEach(el => {
+                    if (el.type === 'way' && el.tags && el.tags.name && el.nodes) {
+                        const coords = el.nodes.map(nodeId => {
+                            const node = nodes.get(nodeId);
+                            return node ? [node.lon, node.lat] : null;
+                        }).filter(c => c !== null);
+
+                        if (coords.length > 1) {
+                            let floodResistance = 0.5; // Default resistance
+                            switch (el.tags.highway) {
+                                case 'motorway':
+                                case 'trunk':
+                                case 'primary':
+                                    floodResistance = 0.8;
+                                    break;
+                                case 'secondary':
+                                case 'tertiary':
+                                    floodResistance = 0.6;
+                                    break;
+                                case 'residential':
+                                case 'service':
+                                    floodResistance = 0.3;
+                                    break;
+                            }
+                            const geojsonFeature = {
+                                type: "Feature",
+                                geometry: { type: "LineString", coordinates: coords },
+                                properties: { name: el.tags.name, highway: el.tags.highway, flood_level: 0, flood_resistance: floodResistance }
+                            };
+                            features.push(geojsonFeature);
+                            roads.push({ id: el.id, name: el.tags.name, coords: ol.proj.fromLonLat(coords[0]) });
+                        }
+                    }
+                });
+
+                const geojsonData = { type: "FeatureCollection", features: features };
+                
+                const accurateRoadsSource = new ol.source.Vector({
+                    features: new ol.format.GeoJSON().readFeatures(geojsonData, {
+                        featureProjection: 'EPSG:3857',
+                        dataProjection: 'EPSG:4326',
+                    }),
+                });
+                
+                roadsLayer.setSource(accurateRoadsSource);
+                populateLocationSelect(roads);
+                closeCustomModal();
+                showCustomModal("Welcome!", "Please select your location from the Settings tab to begin. The flood simulation will be localized to your area.", true);
+            } catch (error) {
+                console.error("Failed to load road data:", error);
+                showCustomModal("Error", "Failed to load road data. Please check your network connection and try again.");
+            }
+        }
+        
+        function populateLocationSelect(roads) {
+            const uniqueRoads = [...new Set(roads.map(r => r.name))].sort();
+            uniqueRoads.unshift("Entire Metro Manila");
+            
+            const locationSelect = document.getElementById('user-location-select');
+            if (locationSelect) {
+                locationSelect.innerHTML = uniqueRoads.map(name => `<option value="${name}">${name}</option>`).join('');
+                locationSelect.addEventListener('change', (e) => {
+                    state.userLocation = e.target.value;
+                    resetSimulation();
+                    const selectedRoad = roads.find(r => r.name === state.userLocation);
+                    updateLocationMarker(selectedRoad);
+                });
+            }
+        }
+        
+        function updateLocationMarker(road) {
+            const source = locationLayer.getSource();
+            source.clear();
+            if (road && road.coords) {
+                const marker = new ol.Feature({ geometry: new ol.geom.Point(road.coords) });
+                source.addFeature(marker);
+            }
+        }
+        
+        function toggleMapLayer(layerType) {
+            const layer = state.mapLayers[layerType];
+            if (layer) layer.setVisible(!layer.getVisible());
         }
 
-        // --- Simulation Core Logic ---
+        // --- Simulation Logic ---
+        function getPrecipitationBySessionType(sessionType, timeInHours) {
+            const time = timeInHours;
+            const totalDuration = state.simulationDuration / 3600;
+            const phaseLength = totalDuration / 3;
+            const timeInPhase = time % phaseLength;
+
+            switch(sessionType) {
+                case 'auto':
+                case 'rain':
+                    if (time < phaseLength) return 2 + (timeInPhase / phaseLength) * 10;
+                    if (time < phaseLength * 2) return 12 + (timeInPhase / phaseLength) * 5;
+                    return 17 - (timeInPhase / phaseLength) * 17;
+                case 'thunderstorm':
+                    if (time < phaseLength) return 5 + (timeInPhase / phaseLength) * 15;
+                    if (time < phaseLength * 2) return 20 + Math.sin(timeInPhase / phaseLength * Math.PI) * 40;
+                    return 20 - (timeInPhase / phaseLength) * 20;
+                case 'tropical-cyclone':
+                    if (time < phaseLength) return 15 + (timeInPhase / phaseLength) * 25;
+                    if (time < phaseLength * 2) return 40 + (timeInPhase / phaseLength) * 60;
+                    return 100 - (timeInPhase / phaseLength) * 100;
+                default:
+                    return 0;
+            }
+        }
+
+        function parseDurationInput() {
+            const value = parseFloat(simulationDurationInput.value);
+            const unit = durationUnitSelect.value;
+            let seconds = 0;
+            if (unit === 'minutes') seconds = value * 60;
+            else if (unit === 'hours') seconds = value * 3600;
+            else if (unit === 'days') seconds = value * 86400;
+            return seconds;
+        }
+
         function startSimulation() {
             if (state.isSimulationRunning) {
-                return;
+                stopSimulation();
+            } else {
+                state.isSimulationRunning = true;
+                state.simulationDuration = parseDurationInput();
+                startSimulationBtn.textContent = 'Stop Simulation';
+                startSimulationBtn.classList.add('btn-red');
+                startSimulationBtn.classList.remove('button');
+                state.simulationInterval = setInterval(stepSimulation, 1000);
+                showCustomModal('Simulation Started', `Starting a new ${sessionTypeSelect.value} simulation for ${simulationDurationInput.value} ${durationUnitSelect.value}.`);
             }
-            state.isSimulationRunning = true;
-            startSimulationBtn.textContent = 'Stop Simulation';
-            startSimulationBtn.classList.remove('btn-green');
-            startSimulationBtn.classList.add('btn-red');
-            state.simulationInterval = setInterval(stepSimulation, 1000);
-            showCustomModal('Simulation Started', 'The simulation is now running. Observe the map and controls for changes.');
         }
 
         function stopSimulation() {
-            if (!state.isSimulationRunning) {
-                return;
-            }
             state.isSimulationRunning = false;
             startSimulationBtn.textContent = 'Start Simulation';
             startSimulationBtn.classList.remove('btn-red');
-            startSimulationBtn.classList.add('btn-green');
+            startSimulationBtn.classList.add('button');
             clearInterval(state.simulationInterval);
-            showCustomModal('Simulation Paused', 'The simulation has been paused.');
-        }
-
-        function generateRaindrop() {
-            const drop = document.createElement('div');
-            drop.classList.add('drop');
-            const left = Math.random() * 100;
-            const duration = 1 + Math.random() * 0.5;
-            const opacity = 0.5 + Math.random() * 0.5;
-            drop.style.left = `${left}%`;
-            drop.style.animationDuration = `${duration}s`;
-            drop.style.opacity = opacity;
-            rainContainer.appendChild(drop);
-
-            setTimeout(() => {
-                drop.remove();
-            }, duration * 1000);
-        }
-
-        function renderRain() {
-            const dropsPerSecond = state.precipitationRate / 2;
-            const dropInterval = 1000 / dropsPerSecond;
-            clearInterval(window.rainInterval);
-            if (state.precipitationRate > 0) {
-                window.rainInterval = setInterval(generateRaindrop, dropInterval);
-            }
-        }
-
-        function checkPAGASAWarning() {
-            let warningLevel = 'Normal';
-            let warningClass = '';
-            let message = 'No active rainfall warnings.';
-
-            if (state.precipitationRate > 60) {
-                warningLevel = 'Red Warning';
-                warningClass = 'red';
-                message = 'Serious flooding is expected in low-lying areas. EVACUATION is highly recommended.';
-            } else if (state.precipitationRate > 40) {
-                warningLevel = 'Orange Warning';
-                warningClass = 'orange';
-                message = 'Flooding is threatening low-lying areas. It is advisable to be alert for possible evacuation.';
-            } else if (state.precipitationRate > 20) {
-                warningLevel = 'Yellow Warning';
-                warningClass = 'yellow';
-                message = 'Flooding is possible in low-lying areas. Stay alert for updates.';
-            }
-            
-            pagasaWarningsLog.innerHTML = `<div class="warning-box ${warningClass}">
-                <p class="warning-title">${warningLevel}</p>
-                <p class="warning-description">${message}</p>
-            </div>`;
         }
 
         function stepSimulation() {
-            const precipitation = state.precipitationRate / 1000;
-            state.currentFloodHeight += precipitation;
-            state.currentFloodHeight = Math.max(0, state.currentFloodHeight - 0.001);
-
-            currentFloodHeightEl.textContent = state.currentFloodHeight.toFixed(2);
-            currentPrecipitationRateEl.textContent = state.precipitationRate;
+            state.simulationTime += 1;
             
-            simulatedRoadsGeoJSON.features.forEach(feature => {
-                if (feature.properties.location === state.userLocation) {
-                    feature.properties.flood_level = state.currentFloodHeight;
+            if (state.simulationTime > state.simulationDuration) {
+                stopSimulation();
+                showCustomModal('Simulation Complete', `The simulation has completed its run.`);
+                return;
+            }
+            
+            const rawPrecipitation = getPrecipitationBySessionType(state.sessionType, state.simulationTime / 3600);
+            let currentPrecipitation = rawPrecipitation;
+            if (randomPrecipitationCheckbox.checked) {
+                currentPrecipitation += (Math.random() - 0.5) * 5;
+                currentPrecipitation = Math.max(0, currentPrecipitation);
+            }
+            
+            state.precipitationRate = currentPrecipitation;
+            state.totalPrecipitation += currentPrecipitation / 3600;
+            
+            state.forecast.temp -= (currentPrecipitation / 2000);
+            state.forecast.humidity += (currentPrecipitation / 1000);
+            state.forecast.temp = Math.max(20, Math.min(35, state.forecast.temp));
+            state.forecast.humidity = Math.max(50, Math.min(100, state.forecast.humidity));
+
+            const features = roadsLayer.getSource().getFeatures();
+            features.forEach(feature => {
+                let floodIncrement = 0;
+                const floodResistance = feature.get('flood_resistance');
+                
+                if (state.userLocation === 'Entire Metro Manila' || feature.get('name') === state.userLocation) {
+                    floodIncrement = (currentPrecipitation / 3600) * (1 - floodResistance) * 0.005; // Drastically reduced for realism
+                    state.currentFloodHeight += floodIncrement;
+                    feature.set('flood_level', state.currentFloodHeight);
+                } else {
+                    feature.set('flood_level', 0);
                 }
             });
-            renderRoads();
-
-            state.simulationTime.setMinutes(state.simulationTime.getMinutes() + 10);
-            updateClockDisplay();
-
+            roadsLayer.changed();
+            
             checkWarningStatus();
-            checkPAGASAWarning();
+            updateUI();
+            updateForecasts();
+
+            // Check for evacuation alert trigger
+            if (state.currentFloodHeight >= 0.5 && !state.alertTriggered) {
+                state.alertTriggered = true;
+                state.alertSound.triggerAttackRelease("C4", "8n");
+                showEvacuationModal();
+            }
+        }
+        
+        function updateForecasts() {
+            const time = state.simulationTime / 3600;
+            state.forecast.flood.h3 = getPrecipitationBySessionType(state.sessionType, time + 3) * 3;
+            state.forecast.flood.h6 = getPrecipitationBySessionType(state.sessionType, time + 6) * 6;
+            state.forecast.flood.h12 = getPrecipitationBySessionType(state.sessionType, time + 12) * 12;
+            updateForecastUI();
         }
 
         function checkWarningStatus() {
-            if (state.currentFloodHeight >= state.evacuationThreshold) {
-                if (!state.isEvacuationWarningActive) {
-                    showWarning('High Flood Level Alert', `The flood height has reached ${state.currentFloodHeight.toFixed(2)}m. Evacuate ${state.userLocation} now!`, true);
-                    state.isEvacuationWarningActive = true;
-                    if (alarmToggle.checked) {
-                        alarmSound.play();
-                    }
-                }
-            } else {
-                if (state.isEvacuationWarningActive) {
-                    hideWarning();
-                    state.isEvacuationWarningActive = false;
-                }
+            const currentPrecip = state.precipitationRate;
+            let rainfallAdvisory = 'None';
+            let tcwsAdvisory = 'None';
+
+            if (currentPrecip >= 7.5 && currentPrecip < 15) { rainfallAdvisory = 'Yellow Warning'; }
+            else if (currentPrecip >= 15 && currentPrecip < 30) { rainfallAdvisory = 'Orange Warning'; }
+            else if (currentPrecip >= 30) { rainfallAdvisory = 'Red Warning'; }
+            
+            if (state.sessionType === 'tropical-cyclone') {
+                if (currentPrecip > 50 && currentPrecip < 80) { tcwsAdvisory = 'TCWS #1'; }
+                else if (currentPrecip > 80 && currentPrecip < 120) { tcwsAdvisory = 'TCWS #2'; }
+                else if (currentPrecip > 120) { tcwsAdvisory = 'TCWS #3'; }
             }
+            
+            if (rainfallAdvisory !== state.lastRainfallWarning) {
+                state.lastRainfallWarning = rainfallAdvisory;
+                if (rainfallAdvisory !== 'None') { logWarning(rainfallAdvisory); }
+            }
+            if (tcwsAdvisory !== state.lastTcwsWarning) {
+                state.lastTcwsWarning = tcwsAdvisory;
+                if (tcwsAdvisory !== 'None') { logWarning(tcwsAdvisory); }
+            }
+            state.forecast.advisories.rainfall = rainfallAdvisory;
+            state.forecast.advisories.tcws = tcwsAdvisory;
+            updatePAGASAAdvisories();
         }
 
-        function showWarning(title, message, isEvacuation = false) {
-            const timestamp = state.simulationTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        function logWarning(advisoryText) {
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
             const logEntry = document.createElement('div');
-            logEntry.classList.add('p-2', 'rounded-md', 'text-sm');
-            logEntry.innerHTML = `<span class="font-bold text-red-500">[${timestamp}] ${title}:</span> ${message}`;
-            warningsLogEl.prepend(logEntry);
-
-            if (isEvacuation) {
-                evacuationWarningEl.style.display = 'block';
-            }
+            logEntry.classList.add('p-2', 'rounded-md', 'text-sm', 'warning-box');
+            if (advisoryText.includes('Yellow')) logEntry.classList.add('yellow');
+            else if (advisoryText.includes('Orange')) logEntry.classList.add('orange');
+            else if (advisoryText.includes('Red') || advisoryText.includes('TCWS')) logEntry.classList.add('red');
+            
+            logEntry.innerHTML = `<p class="warning-title">New Alert</p><p class="warning-description">${advisoryText}</p><p class="text-xs text-gray-500 mt-1">${timestamp}</p>`;
+            
+            if (warningsLogEl.firstChild) { warningsLogEl.insertBefore(logEntry, warningsLogEl.firstChild); }
+            else { warningsLogEl.appendChild(logEntry); }
         }
-
-        function hideWarning() {
-            evacuationWarningEl.style.display = 'none';
-            alarmSound.pause();
-            alarmSound.currentTime = 0;
+        
+        function updatePAGASAAdvisories() {
+            const advisories = state.forecast.advisories;
+            pagasaAdvisoriesEl.innerHTML = '';
+            function createAdvisoryCard(title, description, colorClass) {
+                const card = document.createElement('div');
+                card.className = `info-box p-4 bg-gray-800 border-l-4 rounded-lg shadow-md ${colorClass}`;
+                card.innerHTML = `<p class="font-bold text-lg">${title}</p><p class="text-sm text-gray-400">${description}</p>`;
+                pagasaAdvisoriesEl.appendChild(card);
+            }
+            if (advisories.rainfall !== 'None') {
+                let color = 'border-yellow-500';
+                if (advisories.rainfall.includes('Orange')) color = 'border-orange-500';
+                if (advisories.rainfall.includes('Red')) color = 'border-red-500';
+                createAdvisoryCard('Rainfall Advisory', advisories.rainfall, color);
+            }
+            if (advisories.tcws !== 'None') {
+                let color = 'border-blue-500';
+                if (advisories.tcws.includes('#2') || advisories.tcws.includes('#3')) color = 'border-red-500';
+                createAdvisoryCard('Tropical Cyclone Warning Signal', advisories.tcws, color);
+            }
+            if (advisories.rainfall === 'None' && advisories.tcws === 'None') {
+                pagasaAdvisoriesEl.innerHTML = `<p class="text-sm text-center text-gray-400">Advisories will appear here during a simulation.</p>`;
+            }
         }
 
         function resetSimulation() {
             stopSimulation();
             state.currentFloodHeight = 0;
+            state.simulationTime = 0;
+            state.totalPrecipitation = 0;
             state.precipitationRate = 0;
-            state.isEvacuationWarningActive = false;
-            state.simulationTime = new Date();
-            
+            state.alertTriggered = false;
+            state.lastRainfallWarning = 'None';
+            state.lastTcwsWarning = 'None';
             precipitationRateInput.value = 0;
-            currentFloodHeightEl.textContent = state.currentFloodHeight.toFixed(2);
-            precipitationValueEl.textContent = state.precipitationRate;
+            precipitationValueEl.textContent = 0;
+            state.forecast.temp = 28;
+            state.forecast.humidity = 75;
+            
+            currentFloodHeightEl.textContent = '0.00';
+            totalPrecipitationEl.textContent = '0.00';
             warningsLogEl.innerHTML = '';
-            hideWarning();
             
-            simulatedRoadsGeoJSON.features.forEach(feature => {
-                feature.properties.flood_level = 0.0;
-            });
-            renderRoads();
-            
-            updateClockDisplay();
-            renderRain();
+            const features = roadsLayer.getSource().getFeatures();
+            features.forEach(feature => { feature.set('flood_level', 0); });
+            roadsLayer.changed();
+            updateUI();
+            updateForecasts();
             showCustomModal('Simulation Reset', 'The simulation has been reset to its initial state.');
         }
 
-        function updateClockDisplay() {
-            const date = state.simulationTime;
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            currentTimeEl.textContent = date.toLocaleDateString('en-US', options);
-            currentSimulationTimeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        
-        // --- Map Layer Toggles ---
-        function toggleLayer(layer, geojson, styleFunction) {
-            if (map.hasLayer(layer)) {
-                map.removeLayer(layer);
-            } else {
-                layer = L.geoJSON(geojson, { style: styleFunction }).addTo(map);
-            }
-            return layer;
-        }
-
         // --- Event Listeners and Initialization ---
+        function updateClockDisplay() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('current-time').textContent = now.toLocaleDateString('en-US', options);
+        }
+
         function initializeApp() {
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const menuToggleBtn = document.getElementById('menu-toggle-btn');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarOverlay = document.createElement('div');
-
-            sidebarOverlay.classList.add('fixed', 'inset-0', 'bg-black', 'bg-opacity-50', 'z-10', 'lg:hidden');
-            sidebarOverlay.style.display = 'none';
-            document.body.appendChild(sidebarOverlay);
-
-            // Dark mode toggle
-            darkModeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => switchTab(button.dataset.tab));
             });
-
-            // Mobile sidebar toggle
-            menuToggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('open');
-                sidebarOverlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
-            });
-            sidebarOverlay.addEventListener('click', () => {
-                sidebar.classList.remove('open');
-                sidebarOverlay.style.display = 'none';
-            });
-            
-            // Right panel toggle
-            settingsToggleBtn.addEventListener('click', () => {
-                rightPanel.classList.toggle('open');
-            });
-
-            // Simulation controls
-            startSimulationBtn.addEventListener('click', () => {
-                if (state.isSimulationRunning) {
-                    stopSimulation();
-                } else {
-                    startSimulation();
-                }
-            });
+            startSimulationBtn.addEventListener('click', startSimulation);
             resetSimulationBtn.addEventListener('click', resetSimulation);
-
             precipitationRateInput.addEventListener('input', (e) => {
                 state.precipitationRate = parseInt(e.target.value);
                 precipitationValueEl.textContent = state.precipitationRate;
-                renderRain();
             });
-
-            evacuationThresholdInput.addEventListener('change', (e) => {
-                state.evacuationThreshold = parseFloat(e.target.value);
+            sessionTypeSelect.addEventListener('change', (e) => {
+                state.sessionType = e.target.value;
+                if (state.sessionType === 'auto') { randomPrecipitationCheckbox.checked = true; }
             });
-            
-            userLocationInput.addEventListener('change', (e) => {
-                state.userLocation = e.target.value;
-                updateMapLocation();
-                simulatedRoadsGeoJSON.features.forEach(feature => feature.properties.flood_level = 0.0);
-                renderRoads();
+            roadDetailSelect.addEventListener('change', () => {
+                resetSimulation();
+                loadAllRoads();
             });
-
-            // Map Layer Toggles
-            toggleRainfallWarningsBtn.addEventListener('click', () => {
-                if (!rainfallWarningLayer || !map.hasLayer(rainfallWarningLayer)) {
-                     rainfallWarningLayer = L.geoJSON(simulatedWarningAreas.rainfall, {
-                        style: { color: 'blue', weight: 2, opacity: 0.5, fillOpacity: 0.2 }
-                    }).addTo(map);
-                } else {
-                    map.removeLayer(rainfallWarningLayer);
-                }
-            });
-
-            toggleTcwsBtn.addEventListener('click', () => {
-                if (!tcwsLayer || !map.hasLayer(tcwsLayer)) {
-                    tcwsLayer = L.geoJSON(simulatedWarningAreas.tcws, {
-                        style: { color: 'red', weight: 2, opacity: 0.5, fillOpacity: 0.2 }
-                    }).addTo(map);
-                } else {
-                    map.removeLayer(tcwsLayer);
-                }
-            });
-            
-            toggleClassSuspensionBtn.addEventListener('click', () => {
-                if (!classSuspensionLayer || !map.hasLayer(classSuspensionLayer)) {
-                    classSuspensionLayer = L.geoJSON(simulatedWarningAreas.classSuspension, {
-                        style: { color: 'purple', weight: 2, opacity: 0.5, fillOpacity: 0.2 }
-                    }).addTo(map);
-                } else {
-                    map.removeLayer(classSuspensionLayer);
-                }
-            });
-
+            toggleRainfallWarningsBtn.addEventListener('click', () => toggleMapLayer('rainfall'));
+            toggleTcwsBtn.addEventListener('click', () => toggleMapLayer('tcws'));
+            toggleLocationMarkerBtn.addEventListener('click', () => toggleMapLayer('locationMarker'));
             modalCloseBtn.addEventListener('click', closeCustomModal);
-        
+            
             initializeMap();
+            setInterval(updateClockDisplay, 1000);
             updateClockDisplay();
-            showCustomModal('Welcome!', 'Use the new controls on the right to start the automatic flood simulation. The map will now update every second.');
-        }
-        
-        // This function dynamically loads the Leaflet script and then calls initializeApp
-        function loadLeafletAndStartApp() {
-            const script = document.createElement('script');
-            script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-            script.integrity = "sha256-20nqc1T6l4l2H2r63+s/C2l1H8e4w9/a+u83oT8eP3s=";
-            script.crossOrigin = "";
-            script.onload = initializeApp;
-            document.head.appendChild(script);
         }
 
-        document.addEventListener('DOMContentLoaded', loadLeafletAndStartApp);
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
