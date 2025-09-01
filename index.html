@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Leaflet.js for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQjR7o6sNBLl1c04kL2Hw+f/K9eE5B2c=" crossorigin=""/>
     <style>
         /* Base styles for light mode */
         body {
@@ -25,2020 +27,864 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         header {
-            background-color: #2563eb; /* Blue-700 */
-            color: white;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        .sidebar {
-            background-color: #f0f4f8; /* Light gray-blue */
-            border-right: 1px solid #e2e8f0;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-        .info-panel {
-            background-color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        .pagasa-page, .test-panel, .modal-content {
-            background-color: rgba(255, 255, 255, 0.95);
-            transition: background-color 0.3s ease;
-        }
-        .button-primary {
             background-color: #2563eb; /* Blue-600 */
             color: white;
-        }
-        .button-secondary {
-            background-color: #e2e8f0; /* Gray-200 */
-            color: #4a5568; /* Gray-800 */
-        }
-        .warning-card {
-            background-color: #fee2e2; /* Red-100 */
-            border-left-color: #ef4444; /* Red-500 */
-            color: #b91c1c; /* Red-700 */
-        }
-        .cyclone-card {
-            background-color: #fffbeb; /* Yellow-100 */
-            border-left-color: #f59e0b; /* Yellow-500 */
-            color: #92400e; /* Yellow-800 */
-        }
-        .info-card {
-            background-color: #eff6ff; /* Blue-50 */
-            border-left-color: #60a5fa; /* Blue-400 */
-            color: #1e40af; /* Blue-800 */
-        }
-        .region-polygon {
-            fill: #a0c4ff; /* Default light blue */
-            stroke: #333;
-            stroke-width: 1;
-            transition: fill 0.3s ease-in-out, stroke-width 0.1s ease-in-out;
-        }
-        .region-polygon.selected {
-            stroke: #f59e0b; /* Amber for selected region */
-            stroke-width: 3;
-        }
-        .region-label {
-            fill: #333; /* Dark text color */
-        }
-        .value-label {
-            fill: #1a202c; /* Dark text for values */
-            font-size: 14px;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            pointer-events: none;
-            user-select: none;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7); /* Light shadow for readability */
-        }
-        #mapSvg {
-            background-color: #e0e0e0;
-        }
-
-        /* Dark mode styles */
-        body.dark {
-            background-color: #1a202c; /* Dark background */
-            color: #e2e8f0; /* Light text */
-        }
-        body.dark header {
-            background-color: #1e3a8a; /* Darker blue */
-            color: #dbeafe;
-        }
-        body.dark .sidebar {
-            background-color: #2d3748; /* Darker gray */
-            border-right: 1px solid #4a5568;
-            color: #e2e8f0; /* Ensure sidebar text is light */
-        }
-        body.dark .sidebar h2, body.dark .sidebar h3 {
-            color: #e2e8f0; /* Ensure sidebar headings are light */
-        }
-        body.dark .info-panel {
-            background-color: #2d3748;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-        }
-        body.dark .pagasa-page, body.dark .test-panel, body.dark .modal-content {
-            background-color: rgba(45, 55, 72, 0.95);
-            color: #e2e8f0; /* Ensure text in these panels is light */
-        }
-        body.dark .pagasa-page h2, body.dark .pagasa-page h3, body.dark .pagasa-page h4,
-        body.dark .test-panel h3, body.dark .modal-content h3 {
-            color: #e2e8f0; /* Ensure headings are light in dark mode */
-        }
-        body.dark .button-primary {
-            background-color: #3b82f6; /* Blue-500 */
-            color: white;
-        }
-        body.dark .button-secondary {
-            background-color: #4a5568; /* Gray-700 */
-            color: #e2e8f0; /* Light gray */
-        }
-        body.dark .warning-card {
-            background-color: #450a0a; /* Darker red */
-            border-left-color: #dc2626; /* Red-600 */
-            color: #fecaca; /* Red-200 */
-        }
-        body.dark .cyclone-card {
-            background-color: #451a03; /* Darker yellow */
-            border-left-color: #d97706; /* Yellow-600 */
-            color: #fcd34d; /* Yellow-300 */
-        }
-        body.dark .info-card {
-            background-color: #1e3a8a; /* Darker blue */
-            border-left-color: #3b82f6; /* Blue-500 */
-            color: #bfdbfe; /* Blue-200 */
-        }
-        body.dark .region-polygon {
-            fill: #4a5568; /* Darker default blue */
-            stroke: #e2e8f0; /* Lighter stroke */
-        }
-        body.dark .region-label {
-            fill: #e2e8f0; /* Light text color */
-        }
-        body.dark .value-label {
-            fill: #e2e8f0; /* Light text for values */
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7); /* Dark shadow for readability in dark mode */
-        }
-        body.dark #mapSvg {
-            background-color: #2d3748;
-        }
-
-        /* General map and UI styles */
-        #mapSvg {
-            width: 100%;
-            height: 100%;
-            display: block;
-            cursor: pointer;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .region-label {
-            font-size: 20px;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            pointer-events: none;
-            user-select: none;
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7); /* Light shadow for readability */
-        }
-        /* Adjust font size for zoomed-in views */
-        #mapSvg[viewBox="0 0 500 500"] .region-label { font-size: 25px; }
-        #mapSvg[viewBox="0 0 200 200"] .region-label,
-        #mapSvg[viewBox="0 0 120 120"] .region-label,
-        #mapSvg[viewBox="0 0 100 100"] .region-label,
-        #mapSvg[viewBox="0 0 150 150"] .region-label { font-size: 15px; }
-
-        .main-content-wrapper {
-            flex: 1;
+            padding: 1rem 1.5rem;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        main {
+            display: flex;
+            flex: 1;
             position: relative;
-            overflow: hidden;
         }
         .sidebar {
             width: 300px;
-            min-width: 300px;
-            padding: 1rem;
+            background-color: #e2e8f0; /* Blue-gray-200 */
+            color: #1a202c;
+            padding: 1.5rem;
             overflow-y: auto;
-            max-height: 100%;
+            position: relative;
+            z-index: 20;
             flex-shrink: 0;
+        }
+        .right-panel {
+            width: 300px;
+            background-color: #e2e8f0;
+            color: #1a202c;
+            padding: 1.5rem;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
             position: absolute;
             top: 0;
-            left: 0;
+            right: 0;
             height: 100%;
-            z-index: 100;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+            z-index: 20;
         }
-        .sidebar.open {
+        .right-panel.open {
             transform: translateX(0);
         }
-        .sidebar-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #map-container {
+            flex: 1;
+            position: relative;
+            background-color: #e2e8f0;
+        }
+        #map {
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 90;
-            display: none;
         }
-        .sidebar.open + .sidebar-overlay {
-            display: block;
-        }
-        .pagasa-page {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            backdrop-filter: blur(5px);
-            z-index: 110;
-            overflow-y: auto;
-            padding: 2rem;
-            display: none;
-        }
-        .test-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            border-radius: 0.75rem;
+        .info-box {
+            background-color: #fff;
+            border: 1px solid #cbd5e1; /* Slate-300 */
+            border-radius: 0.5rem;
             padding: 1rem;
-            z-index: 120;
-            display: none;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .modal {
+        .info-box h3, .info-box h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        .input-group input[type="range"], .input-group input[type="number"], .input-group input[type="text"], .input-group input[type="datetime-local"], .input-group select {
+            width: 100%;
+            border-radius: 0.375rem;
+            border: 1px solid #cbd5e1;
+            padding: 0.5rem 0.75rem;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .button:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-green {
+            background-color: #10b981;
+        }
+        .btn-green:hover {
+            background-color: #059669;
+        }
+        .btn-red {
+            background-color: #ef4444;
+        }
+        .btn-red:hover {
+            background-color: #dc2626;
+        }
+        .custom-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
             justify-content: center;
             align-items: center;
-            z-index: 200;
-            display: none;
+            z-index: 50;
         }
-        .modal-content {
+        .custom-modal {
+            background-color: #fff;
             padding: 2rem;
             border-radius: 0.75rem;
-            max-width: 500px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
             width: 90%;
+            max-width: 500px;
             text-align: center;
         }
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 10px;
+        .dark-mode {
+            background-color: #1a202c;
+            color: #f8fafc;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .dark-mode .sidebar, .dark-mode .right-panel {
+            background-color: #2d3748;
         }
-
-        /* Desktop specific styles */
-        @media (min-width: 768px) {
+        .dark-mode .info-box {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+        .dark-mode .info-box h3 {
+            color: #f8fafc;
+        }
+        .dark-mode .input-group input, .dark-mode .input-group select {
+            background-color: #4a5568;
+            color: #f8fafc;
+            border-color: #4a5568;
+        }
+        .dark-mode header {
+            background-color: #1d4ed8;
+        }
+        .dark-mode .button {
+            background-color: #3b82f6;
+        }
+        .dark-mode .button:hover {
+            background-color: #2563eb;
+        }
+        /* Mobile styles */
+        @media (max-width: 768px) {
             .sidebar {
-                position: relative;
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+            }
+            .sidebar.open {
                 transform: translateX(0);
             }
-            .sidebar-overlay {
-                display: none !important;
+        }
+        /* Style for the rain effect */
+        .rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .drop {
+            position: absolute;
+            background-color: #60a5fa; /* Blue-400 */
+            width: 2px;
+            height: 20px;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
             }
-            .main-content-wrapper {
-                flex-direction: row;
-            }
+        }
+        .evacuation-warning {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #dc2626; /* Red-600 */
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            z-index: 100;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        #alarm-sound {
+            display: none; /* Hide the audio element */
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        .color-box {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+        }
+        .warning-box {
+            background-color: #ffffe0;
+            border-left: 4px solid #f0ad4e;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .warning-box.yellow {
+            background-color: #fffde7;
+            border-color: #ffc107;
+        }
+        .warning-box.orange {
+            background-color: #fff3e0;
+            border-color: #ff9800;
+        }
+        .warning-box.red {
+            background-color: #ffebee;
+            border-color: #f44336;
+        }
+        .warning-title {
+            font-weight: bold;
+            color: #333;
+        }
+        .warning-box.yellow .warning-title { color: #f57f17; }
+        .warning-box.orange .warning-title { color: #e65100; }
+        .warning-box.red .warning-title { color: #c62828; }
+        .warning-description {
+            font-size: 0.875rem;
+            color: #555;
+        }
+        .dark-mode .warning-box {
+            background-color: #2d3748;
+        }
+        .dark-mode .warning-title, .dark-mode .warning-description {
+            color: #f8fafc;
         }
     </style>
 </head>
 <body>
-
-    <!-- Header -->
-    <header class="bg-blue-700 text-white p-4 shadow-md flex justify-between items-center flex-shrink-0">
-        <div class="flex items-center">
-            <!-- Hamburger menu for mobile -->
-            <button id="menuToggleBtn" class="md:hidden bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg mr-3 transition duration-300 ease-in-out">
-                <i class="fas fa-bars"></i>
-            </button>
+    <header>
+        <div class="flex items-center space-x-4">
+            <button id="menu-toggle-btn" class="text-white text-2xl lg:hidden"><i class="fas fa-bars"></i></button>
             <h1 class="text-2xl font-bold">PH Flood & Weather Monitor</h1>
         </div>
-        <nav class="flex items-center">
-            <button id="homeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out mr-2">Home</button>
-            <button id="pagasaWarningsBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out mr-2">PAGASA Warnings</button>
-            <!-- Dark Mode Toggle -->
-            <button id="darkModeToggle" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition duration-300 ease-in-out mr-2">
-                <i class="fas fa-moon" id="darkModeIcon"></i>
-            </button>
-            <!-- Secret Test Button -->
-            <button id="secretTestButton" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-md transition duration-300 ease-in-out" title="Developer Tools">
-                <i class="fas fa-tools"></i>
-            </button>
-        </nav>
+        <div class="flex items-center space-x-4">
+            <div id="current-time" class="text-white font-medium"></div>
+            <button id="dark-mode-toggle" class="text-white text-2xl"><i class="fas fa-moon"></i></button>
+            <button id="settings-toggle-btn" class="text-white text-2xl"><i class="fas fa-cog"></i></button>
+        </div>
     </header>
 
-    <!-- Main Content Area -->
-    <div class="main-content-wrapper">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar flex flex-col">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Information & Controls</h2>
-
-            <button id="checkLocationBtn" class="button-primary">Check My Location</button>
-            <button id="askLLMBtn" class="button-primary">Ask LLM for Flood Info</button>
-
-            <div class="info-panel mt-4">
-                <h3 class="text-lg font-medium mb-2 text-gray-700">Area Information</h3>
-                <div id="areaInfo" class="text-sm text-gray-60-0">
-                    <p>Click on the map or use "Check My Location" to view details.</p>
+    <main>
+        <!-- Left Sidebar (Information & Controls) -->
+        <aside class="sidebar" id="sidebar">
+            <h2 class="text-xl font-bold mb-4">Information & Controls</h2>
+            <div class="info-box">
+                <h3>Area Information</h3>
+                <div class="input-group">
+                    <label for="user-location-input">Your Location:</label>
+                    <select id="user-location-input" class="w-full rounded-md border border-gray-300 p-2">
+                        <option value="Manila">Manila</option>
+                        <option value="Cebu">Cebu</option>
+                        <option value="Bacolod">Bacolod</option>
+                    </select>
+                </div>
+                <div class="flex flex-col space-y-2">
+                    <button id="check-location-btn" class="button btn-green">Check My Location</button>
                 </div>
             </div>
 
-            <div class="info-panel">
-                <h3 class="text-lg font-medium mb-2 text-gray-700">Map Layers</h3>
-                <button id="toggleFloodHeight" class="button-secondary">Toggle Flood Height</button>
-                <button id="togglePrecipitation" class="button-secondary">Toggle Precipitation</button>
-                <button id="toggleRainfallWarnings" class="button-secondary">Toggle Rainfall Warnings</button>
-                <button id="toggleTCWS" class="button-secondary">Toggle TCWS</button>
-                <button id="toggleClassSuspension" class="button-secondary">Toggle Class Suspension</button>
-            </div>
-
-            <div class="info-panel">
-                <h3 class="text-lg font-medium mb-2 text-gray-700">Weather Forecast</h3>
-                <div id="weatherForecast" class="text-sm text-gray-600">
-                    <p>No forecast available for selected area.</p>
+            <div class="info-box">
+                <h3>Map Layers</h3>
+                <div class="flex flex-col space-y-2">
+                    <button id="toggle-rainfall-warnings-btn" class="button">Toggle Rainfall Warnings</button>
+                    <button id="toggle-tcws-btn" class="button">Toggle TCWS</button>
+                    <button id="toggle-class-suspension-btn" class="button">Toggle Class Suspension</button>
                 </div>
             </div>
-
-            <button id="backToMetroManilaBtn" class="button-primary mt-auto hidden">Back to Metro Manila</button>
-            <button id="backToPHMapBtn" class="button-primary mt-2 hidden">Back to National Map</button>
-
+            
+            <div class="info-box mt-4">
+                <h3>Map Legend</h3>
+                <div class="legend-item"><div class="color-box bg-green-500"></div><p>Normal</p></div>
+                <div class="legend-item"><div class="color-box bg-yellow-500"></div><p>Minor Flooding</p></div>
+                <div class="legend-item"><div class="color-box bg-orange-500"></div><p>Major Flooding</p></div>
+                <div class="legend-item"><div class="color-box bg-red-500"></div><p>Evacuation Level</p></div>
+            </div>
+            
+            <div class="info-box mt-4">
+                <h3>Latest Warnings</h3>
+                <div id="warnings-log" class="text-sm space-y-2">
+                    <!-- Warnings will be logged here -->
+                </div>
+            </div>
         </aside>
 
-        <!-- Sidebar Overlay (for mobile) -->
-        <div id="sidebarOverlay" class="sidebar-overlay"></div>
-
-        <!-- Map Container -->
-        <main id="mapContainer" class="flex-1 flex justify-center items-center p-4">
-            <!-- SVG Map will be drawn here -->
-            <svg id="mapSvg" viewBox="0 0 1000 1500" preserveAspectRatio="xMidYMid meet"></svg>
-        </main>
-    </div>
-
-    <!-- PAGASA Warnings Page -->
-    <div id="pagasaPage" class="pagasa-page">
-        <h2 class="text-3xl font-bold mb-6 text-gray-900">PAGASA Warnings & Water Levels</h2>
-        <button id="closePagasaPageBtn" class="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out">Close</button>
-
-        <section class="mb-8">
-            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Heavy Rainfall Warnings</h3>
-            <div id="rainfallWarningsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <p class="text-gray-600">No active rainfall warnings.</p>
-            </div>
-        </section>
-
-        <section class="mb-8">
-            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Tropical Cyclone Warning Signals (TCWS)</h3>
-            <div id="tcwsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <p class="text-gray-600">No active TCWS.</p>
-            </div>
-        </section>
-
-        <section class="mb-8">
-            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Class & Work Suspensions</h3>
-            <div id="suspensionsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <p class="text-gray-600">No active suspensions.</p>
-            </div>
-        </section>
-
-        <section>
-            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Water Body Levels</h3>
-            <div id="waterLevelsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Water levels will be injected here -->
-                <div class="info-card">
-                    <h4 class="font-bold text-lg mb-1">Laguna de Bay</h4>
-                    <p>Current Height: <span id="lagunaBayHeight">N/A</span></p>
-                    <p>Status: <span id="lagunaBayStatus">Normal</span></p>
-                </div>
-                <div class="info-card">
-                    <h4 class="font-bold text-lg mb-1">Pasig River</h4>
-                    <p>Current Height: <span id="pasigRiverHeight">N/A</span></p>
-                    <p>Status: <span id="pasigRiverStatus">Normal</span></p>
-                </div>
-                <div class="info-card">
-                    <h4 class="font-bold text-lg mb-1">Marikina River</h4>
-                    <p>Current Height: <span id="marikinaRiverHeight">N/A</span></p>
-                    <p>Status: <span id="marikinaRiverStatus">Normal</span></p>
+        <!-- Right Panel (Simulation Controls) -->
+        <aside class="right-panel" id="right-panel">
+            <h2 class="text-xl font-bold mb-4">Simulation Control</h2>
+            <div class="info-box">
+                <h3>PAGASA Warnings</h3>
+                <div id="pagasa-warnings-log" class="text-sm space-y-2">
+                    <!-- PAGASA warnings will be displayed here -->
                 </div>
             </div>
-        </section>
-    </div>
-
-    <!-- Secret Test Panel -->
-    <div id="testPanel" class="test-panel">
-        <h3 class="text-lg font-medium mb-2 text-gray-700">Simulation Control</h3>
-        <button id="closeTestPanelBtn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">X</button>
-
-        <div class="mb-4">
-            <label for="simulateEvent" class="block text-sm font-medium text-gray-700">Simulate Event:</label>
-            <select id="simulateEvent" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                <option value="normal">Normal Rain</option>
-                <option value="heavyRain">Heavy Rainfall Event</option>
-                <option value="cyclone">Tropical Cyclone</option>
-                <option value="clear">Clear Weather</option>
-            </select>
-        </div>
-
-        <div class="mb-4">
-            <label for="precipitationLevel" class="block text-sm font-medium text-gray-700">Base Precipitation (mm/hr):</label>
-            <input type="number" id="precipitationLevel" min="0" max="100" value="0" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-        </div>
-
-        <div class="mb-4">
-            <label for="nextHourPrecipitation" class="block text-sm font-medium text-gray-700">Next Hour Precipitation (mm/hr):</label>
-            <input type="number" id="nextHourPrecipitation" min="0" max="100" value="" placeholder="Optional: Override for next hour" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-        </div>
-
-        <div class="mb-4">
-            <label for="precipitationRandomness" class="block text-sm font-medium text-gray-700">Precipitation Randomness (+/- mm/hr):</label>
-            <input type="number" id="precipitationRandomness" min="0" max="20" value="10" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-        </div>
-
-        <div class="mb-4">
-            <label for="simulationHours" class="block text-sm font-medium text-gray-700">Total Simulation Hours:</label>
-            <input type="number" id="simulationHours" min="1" max="24" value="6" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-        </div>
-
-        <div class="mb-4">
-            <label for="seasonSelect" class="block text-sm font-medium text-gray-700">Season:</label>
-            <select id="seasonSelect" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                <option value="dry">Dry Season</option>
-                <option value="wet">Wet Season</option>
-            </select>
-        </div>
-
-        <button id="startSimulationBtn" class="button-primary">Start Simulation</button>
-        <button id="nextHourBtn" class="button-primary hidden">Next Hour</button>
-        <button id="resetSimulationBtn" class="button-secondary hidden">Reset Simulation</button>
-    </div>
-
-    <!-- Custom Modal for Alerts and LLM Input -->
-    <div id="customModal" class="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle" class="text-xl font-bold mb-4"></h3>
-            <p id="modalMessage" class="mb-6"></p>
-            <div id="modalInputContainer" class="hidden mb-4">
-                <textarea id="modalInput" class="w-full p-2 border rounded-md" rows="3" placeholder="Type your question here..."></textarea>
+            <div class="info-box">
+                <h3>Manual Controls</h3>
+                <div class="input-group">
+                    <label for="precipitation-rate">Precipitation Rate: <span id="precipitation-value">0</span> mm/hr</label>
+                    <input type="range" id="precipitation-rate" min="0" max="100" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="evacuation-threshold-input">Evacuation Threshold (m):</label>
+                    <input type="number" id="evacuation-threshold-input" min="0" step="0.1" value="1.0">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="alarm-toggle" class="form-checkbox">
+                    <label for="alarm-toggle">Enable Alarm Sound</label>
+                </div>
             </div>
-            <div id="modalActions" class="flex justify-center space-x-4">
-                <button id="modalConfirmBtn" class="button-primary hidden">Confirm</button>
-                <button id="modalCloseBtn" class="button-primary">OK</button>
+
+            <div class="flex flex-col space-y-2 mt-4">
+                <button id="start-simulation-btn" class="button btn-green w-full">Start Simulation</button>
+                <button id="reset-simulation-btn" class="button w-full">Reset Simulation</button>
             </div>
-            <div id="modalLoading" class="hidden flex items-center justify-center mt-4">
-                <div class="loading-spinner"></div>
-                <span class="ml-2 text-gray-700">Thinking...</span>
+        </aside>
+
+        <!-- Main content area for the map -->
+        <div id="map-container">
+            <div id="map"></div>
+            <!-- Rain effect container -->
+            <div id="rain-container" class="rain"></div>
+            <!-- Evacuation warning element -->
+            <div id="evacuation-warning" class="evacuation-warning">
+                EVACUATE NOW!
+            </div>
+            
+            <!-- Map overlay info box -->
+            <div class="absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-white dark:bg-gray-700 rounded-lg shadow-lg p-4 z-10 transition-transform transform">
+                <h3 class="text-lg font-bold">Current Status</h3>
+                <p><strong>Current Time:</strong> <span id="current-simulation-time"></span></p>
+                <p><strong>Current Flood Height:</strong> <span id="current-flood-height" class="font-semibold">0.00</span> m</p>
+                <p><strong>Precipitation Rate:</strong> <span id="current-precipitation-rate" class="font-semibold">0</span> mm/hr</p>
+                <p><strong>Location:</strong> <span id="current-location" class="font-semibold">Manila</span></p>
             </div>
         </div>
+    </main>
+
+    <!-- Modal for messages and warnings -->
+    <div id="custom-modal-overlay" class="custom-modal-overlay">
+        <div id="custom-modal" class="custom-modal">
+            <h3 id="modal-title" class="text-2xl font-bold mb-2"></h3>
+            <p id="modal-message" class="text-gray-600"></p>
+            <button id="modal-close-btn" class="button mt-4">OK</button>
+        </div>
     </div>
+    
+    <!-- Audio element for the alarm sound -->
+    <audio id="alarm-sound">
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
 
     <script>
-        // --- Global Variables ---
-        let currentSelectedLocation = null; // To store the currently selected location object
-        let currentMapZoomLevel = 'national'; // 'national', 'metro_manila_cities', or a specific city's towns (e.g., 'quezon_city_towns')
-        let selectedRegionPolygon = null; // To keep track of the currently selected SVG polygon
-        let currentParentLocationId = null; // To track the parent for "Back" button
-
-        let currentSimulationHour = 0;
-        let totalSimulationHours = 0;
-        let basePrecipitationLevel = 0;
-        let precipitationRandomness = 10; // Default randomness
-        let currentSeason = 'dry'; // 'dry' or 'wet'
-        let isDarkMode = false; // Track dark mode state
-
-        // Store initial simulated data for reset
-        let initialSimulatedData = {};
-
-        // Simulated Data (for demonstration purposes)
-        // Lat/Lng are still present but conceptual for data association.
-        const simulatedLocations = [
-            // Level 1: Island Groups
-            { id: 'luzon', name: 'Luzon', type: 'island_group', svgPathId: 'pathLuzon', seaLevelElevation: 10 },
-            { id: 'visayas', name: 'Visayas', type: 'island_group', svgPathId: 'pathVisayas', seaLevelElevation: 5 },
-            { id: 'mindanao', name: 'Mindanao', type: 'island_group', svgPathId: 'pathMindanao', seaLevelElevation: 15 },
-            { id: 'palawan', name: 'Palawan', type: 'island_group', svgPathId: 'pathPalawan', seaLevelElevation: 2 },
-
-            // Level 2: Provinces (some within Luzon for example)
-            { id: 'pangasinan', name: 'Pangasinan', type: 'province', parent: 'luzon', svgPathId: 'pathPangasinan', seaLevelElevation: 3 },
-            { id: 'pampanga', name: 'Pampanga', type: 'province', parent: 'luzon', svgPathId: 'pathPampanga', seaLevelElevation: 1 },
-            { id: 'laguna', name: 'Laguna', type: 'province', parent: 'luzon', svgPathId: 'pathLaguna', seaLevelElevation: 4 },
-            { id: 'bicol_region', name: 'Bicol Region', type: 'province', parent: 'luzon', svgPathId: 'pathBicol', seaLevelElevation: 7 },
-            { id: 'cavite', name: 'Cavite', type: 'province', parent: 'luzon', svgPathId: 'pathCavite', seaLevelElevation: 2 },
-            { id: 'bulacan', name: 'Bulacan', type: 'province', parent: 'luzon', svgPathId: 'pathBulacan', seaLevelElevation: 1 },
-            
-            // Visayas Provinces
-            { id: 'cebu_province', name: 'Cebu', type: 'province', parent: 'visayas', svgPathId: 'pathCebu', seaLevelElevation: 8 },
-            { id: 'leyte_province', name: 'Leyte', type: 'province', parent: 'visayas', svgPathId: 'pathLeyte', seaLevelElevation: 6 },
-            { id: 'negros_occidental', name: 'Negros Occ.', type: 'province', parent: 'visayas', svgPathId: 'pathNegrosOccidental', seaLevelElevation: 4 },
-            { id: 'iloilo_province', name: 'Iloilo', type: 'province', parent: 'visayas', svgPathId: 'pathIloilo', seaLevelElevation: 3 },
-
-            // Mindanao Provinces
-            { id: 'davao_del_sur', name: 'Davao del Sur', type: 'province', parent: 'mindanao', svgPathId: 'pathDavaoDelSur', seaLevelElevation: 12 },
-            { id: 'zamboanga_del_sur', name: 'Zamboanga del Sur', type: 'province', parent: 'mindanao', svgPathId: 'pathZamboangaDelSur', seaLevelElevation: 10 },
-            { id: 'misamis_oriental', name: 'Misamis Or.', type: 'province', parent: 'mindanao', svgPathId: 'pathMisamisOriental', seaLevelElevation: 9 },
-            { id: 'agusan_del_norte', name: 'Agusan del Norte', type: 'province', parent: 'mindanao', svgPathId: 'pathAgusanDelNorte', seaLevelElevation: 11 },
-
-
-            // Level 2.5: Metro Manila Region (special case within Luzon)
-            { id: 'manila_region', name: 'Metro Manila', type: 'region', isMetroManila: true, parent: 'luzon', svgPathId: 'pathMetroManila', seaLevelElevation: 0.5 },
-
-            // Level 3: Cities within Metro Manila (when zoomed into Metro Manila) - Expanded List
-            { id: 'caloocan', name: 'Caloocan', type: 'city', parent: 'manila_region', svgPathId: 'pathCaloocan', seaLevelElevation: 0.2 },
-            { id: 'las_pinas', name: 'Las Piñas', type: 'city', parent: 'manila_region', svgPathId: 'pathLasPinas', seaLevelElevation: 0.8 },
-            { id: 'makati', name: 'Makati', type: 'city', parent: 'manila_region', svgPathId: 'pathMakati', seaLevelElevation: 1.5 },
-            { id: 'malabon', name: 'Malabon', type: 'city', parent: 'manila_region', svgPathId: 'pathMalabon', seaLevelElevation: -0.5 }, // Below sea level
-            { id: 'mandaluyong', name: 'Mandaluyong', type: 'city', parent: 'manila_region', svgPathId: 'pathMandaluyong', seaLevelElevation: 0.7 },
-            { id: 'manila_city', name: 'Manila City', type: 'city', parent: 'manila_region', svgPathId: 'pathManilaCity', seaLevelElevation: 0.1 },
-            { id: 'marikina', name: 'Marikina', type: 'city', parent: 'manila_region', svgPathId: 'pathMarikina', seaLevelElevation: 0.3 },
-            { id: 'muntinlupa', name: 'Muntinlupa', type: 'city', parent: 'manila_region', svgPathId: 'pathMuntinlupa', seaLevelElevation: 1.0 },
-            { id: 'navotas', name: 'Navotas', type: 'city', parent: 'manila_region', svgPathId: 'pathNavotas', seaLevelElevation: -0.8 }, // Below sea level
-            { id: 'paranaque', name: 'Parañaque', type: 'city', parent: 'manila_region', svgPathId: 'pathParanaque', seaLevelElevation: 0.6 },
-            { id: 'pasay', name: 'Pasay', type: 'city', parent: 'manila_region', svgPathId: 'pathPasay', seaLevelElevation: 0.0 },
-            { id: 'pasig', name: 'Pasig', type: 'city', parent: 'manila_region', svgPathId: 'pathPasig', seaLevelElevation: 0.4 },
-            { id: 'quezon_city', name: 'Quezon City', type: 'city', parent: 'manila_region', svgPathId: 'pathQuezonCity', seaLevelElevation: 2.0 },
-            { id: 'san_juan', name: 'San Juan', type: 'city', parent: 'manila_region', svgPathId: 'pathSanJuan', seaLevelElevation: 0.9 },
-            { id: 'taguig', name: 'Taguig', type: 'city', parent: 'manila_region', svgPathId: 'pathTaguig', seaLevelElevation: 1.2 },
-            { id: 'valenzuela', name: 'Valenzuela', type: 'city', parent: 'manila_region', svgPathId: 'pathValenzuela', seaLevelElevation: 0.0 },
-
-            // Level 4: Towns/Districts within specific Metro Manila Cities - Expanded List
-            // Quezon City
-            { id: 'diliman', name: 'Diliman', type: 'town', parent: 'quezon_city', svgPathId: 'pathDiliman', seaLevelElevation: 2.5 },
-            { id: 'cubao', name: 'Cubao', type: 'town', parent: 'quezon_city', svgPathId: 'pathCubao', seaLevelElevation: 1.8 },
-            { id: 'commonwealth', name: 'Commonwealth', type: 'town', parent: 'quezon_city', svgPathId: 'pathCommonwealth', seaLevelElevation: 2.2 },
-            { id: 'fairview', name: 'Fairview', type: 'town', parent: 'quezon_city', svgPathId: 'pathFairview', seaLevelElevation: 2.8 },
-            { id: 'tatalon', name: 'Tatalon', type: 'town', parent: 'quezon_city', svgPathId: 'pathTatalon', seaLevelElevation: 1.0 },
-            { id: 'tandang_sora', name: 'Tandang Sora', type: 'town', parent: 'quezon_city', svgPathId: 'pathTandangSora', seaLevelElevation: 1.5 },
-            // Manila City
-            { id: 'ermita', name: 'Ermita', type: 'town', parent: 'manila_city', svgPathId: 'pathErmita', seaLevelElevation: 0.0 },
-            { id: 'intramuros', name: 'Intramuros', type: 'town', parent: 'manila_city', svgPathId: 'pathIntramuros', seaLevelElevation: 0.5 },
-            { id: 'binondo', name: 'Binondo', type: 'town', parent: 'manila_city', svgPathId: 'pathBinondo', seaLevelElevation: -0.2 },
-            { id: 'sampaloc', name: 'Sampaloc', type: 'town', parent: 'manila_city', svgPathId: 'pathSampaloc', seaLevelElevation: 0.3 },
-            { id: 'malate', name: 'Malate', type: 'town', parent: 'manila_city', svgPathId: 'pathMalate', seaLevelElevation: 0.1 },
-            { id: 'tundo', name: 'Tondo', type: 'town', parent: 'manila_city', svgPathId: 'pathTondo', seaLevelElevation: -0.1 },
-            // Makati
-            { id: 'ayala_center', name: 'Ayala Center', type: 'town', parent: 'makati', svgPathId: 'pathAyalaCenter', seaLevelElevation: 1.8 },
-            { id: 'east_rembo', name: 'East Rembo', type: 'town', parent: 'makati', svgPathId: 'pathEastRembo', seaLevelElevation: 1.0 },
-            { id: 'poblacion', name: 'Poblacion', type: 'town', parent: 'makati', svgPathId: 'pathPoblacion', seaLevelElevation: 1.3 },
-            { id: 'west_rembo', name: 'West Rembo', type: 'town', parent: 'makati', svgPathId: 'pathWestRembo', seaLevelElevation: 0.9 },
-            { id: 'pembo', name: 'Pembo', type: 'town', parent: 'makati', svgPathId: 'pathPembo', seaLevelElevation: 0.8 },
-            // Marikina
-            { id: 'barangay_manggahan', name: 'Brgy. Manggahan', type: 'town', parent: 'marikina', svgPathId: 'pathBrgyManggahan', seaLevelElevation: 0.1 },
-            { id: 'barangay_concepcion', name: 'Brgy. Concepcion', type: 'town', parent: 'marikina', svgPathId: 'pathBrgyConcepcion', seaLevelElevation: 0.2 },
-            { id: 'barangay_barangka', name: 'Brgy. Barangka', type: 'town', parent: 'marikina', svgPathId: 'pathBrgyBarangka', seaLevelElevation: -0.1 },
-            { id: 'barangay_tumana', name: 'Brgy. Tumana', type: 'town', parent: 'marikina', svgPathId: 'pathBrgyTumana', seaLevelElevation: 0.0 },
-            // Pasig
-            { id: 'barangay_san_antonio', name: 'Brgy. San Antonio', type: 'town', parent: 'pasig', svgPathId: 'pathBrgySanAntonio', seaLevelElevation: 0.5 },
-            { id: 'barangay_rosario', name: 'Brgy. Rosario', type: 'town', parent: 'pasig', svgPathId: 'pathBrgyRosario', seaLevelElevation: 0.3 },
-            { id: 'barangay_ortigas', name: 'Brgy. Ortigas', type: 'town', parent: 'pasig', svgPathId: 'pathBrgyOrtigas', seaLevelElevation: 0.8 },
-            { id: 'barangay_kapitolyo', name: 'Brgy. Kapitolyo', type: 'town', parent: 'pasig', svgPathId: 'pathBrgyKapitolyo', seaLevelElevation: 0.6 },
-            // Caloocan
-            { id: 'barangay_176', name: 'Brgy. 176', type: 'town', parent: 'caloocan', svgPathId: 'pathBrgy176', seaLevelElevation: -0.3 },
-            { id: 'barangay_177', name: 'Brgy. 177', type: 'town', parent: 'caloocan', svgPathId: 'pathBrgy177', seaLevelElevation: -0.1 },
-            { id: 'barangay_178', name: 'Brgy. 178', type: 'town', parent: 'caloocan', svgPathId: 'pathBrgy178', seaLevelElevation: 0.0 },
-            // Taguig
-            { id: 'fort_bonifacio', name: 'Fort Bonifacio', type: 'town', parent: 'taguig', svgPathId: 'pathFortBonifacio', seaLevelElevation: 1.5 },
-            { id: 'ususan', name: 'Ususan', type: 'town', parent: 'taguig', svgPathId: 'pathUsusan', seaLevelElevation: 0.7 },
-            { id: 'signal_village', name: 'Signal Village', type: 'town', parent: 'taguig', svgPathId: 'pathSignalVillage', seaLevelElevation: 0.9 },
-            // Las Piñas
-            { id: 'almanza_uno', name: 'Almanza Uno', type: 'town', parent: 'las_pinas', svgPathId: 'pathAlmanzaUno', seaLevelElevation: 1.0 },
-            { id: 'talon_tres', name: 'Talon Tres', type: 'town', parent: 'las_pinas', svgPathId: 'pathTalonTres', seaLevelElevation: 0.6 },
-            // Malabon
-            { id: 'dampalit', name: 'Dampalit', type: 'town', parent: 'malabon', svgPathId: 'pathDampalit', seaLevelElevation: -0.6 },
-            { id: 'tinajeros', name: 'Tinajeros', type: 'town', parent: 'malabon', svgPathId: 'pathTinajeros', seaLevelElevation: -0.3 },
-            // Mandaluyong
-            { id: 'barangka_itaas', name: 'Barangka Itaas', type: 'town', parent: 'mandaluyong', svgPathId: 'pathBarangkaItaas', seaLevelElevation: 0.4 },
-            { id: 'plainview', name: 'Plainview', type: 'town', parent: 'mandaluyong', svgPathId: 'pathPlainview', seaLevelElevation: 0.7 },
-            // Muntinlupa
-            { id: 'alabang', name: 'Alabang', type: 'town', parent: 'muntinlupa', svgPathId: 'pathAlabang', seaLevelElevation: 1.2 },
-            { id: 'sucat', name: 'Sucat', type: 'town', parent: 'muntinlupa', svgPathId: 'pathSucat', seaLevelElevation: 0.9 },
-            // Navotas
-            { id: 'tangos', name: 'Tangos', type: 'town', parent: 'navotas', svgPathId: 'pathTangos', seaLevelElevation: -0.9 },
-            { id: 'bagumbayan', name: 'Bagumbayan', type: 'town', parent: 'navotas', svgPathId: 'pathBagumbayan', seaLevelElevation: -0.7 },
-            // Parañaque
-            { id: 'bf_homes', name: 'BF Homes', type: 'town', parent: 'paranaque', svgPathId: 'pathBFHomes', seaLevelElevation: 0.8 },
-            { id: 'san_dioniso', name: 'San Dionisio', type: 'town', parent: 'paranaque', svgPathId: 'pathSanDioniso', seaLevelElevation: 0.4 },
-            // Pasay
-            { id: 'epifanio_delos_santos', name: 'Epifanio delos Santos', type: 'town', parent: 'pasay', svgPathId: 'pathEpifanioDelosSantos', seaLevelElevation: 0.0 },
-            { id: 'malibay', name: 'Malibay', type: 'town', parent: 'pasay', svgPathId: 'pathMalibay', seaLevelElevation: 0.2 },
-            // San Juan
-            { id: 'greenhills', name: 'Greenhills', type: 'town', parent: 'san_juan', svgPathId: 'pathGreenhills', seaLevelElevation: 1.1 },
-            { id: 'santa_lucia', name: 'Santa Lucia', type: 'town', parent: 'san_juan', svgPathId: 'pathSantaLucia', seaLevelElevation: 0.7 },
-            // Valenzuela
-            { id: 'malinta', name: 'Malinta', type: 'town', parent: 'valenzuela', svgPathId: 'pathMalinta', seaLevelElevation: 0.2 },
-            { id: 'karuhatan', name: 'Karuhatan', type: 'town', parent: 'valenzuela', svgPathId: 'pathKaruhatan', seaLevelElevation: 0.5 },
-
-            // Cavite Towns/Cities
-            { id: 'bacoor', name: 'Bacoor', type: 'city', parent: 'cavite', svgPathId: 'pathBacoor', seaLevelElevation: 0.5 },
-            { id: 'imus', name: 'Imus', type: 'city', parent: 'cavite', svgPathId: 'pathImus', seaLevelElevation: 0.7 },
-            { id: 'dasmarinas', name: 'Dasmariñas', type: 'city', parent: 'cavite', svgPathId: 'pathDasmarinas', seaLevelElevation: 1.0 },
-            // Bulacan Towns/Cities
-            { id: 'malolos', name: 'Malolos', type: 'city', parent: 'bulacan', svgPathId: 'pathMalolos', seaLevelElevation: 0.3 },
-            { id: 'san_jose_del_monte', name: 'San Jose del Monte', type: 'city', parent: 'bulacan', svgPathId: 'pathSanJoseDelMonte', seaLevelElevation: 1.5 },
-            { id: 'meycauayan', name: 'Meycauayan', type: 'city', parent: 'bulacan', svgPathId: 'pathMeycauayan', seaLevelElevation: 0.1 },
-
-
-            // Rivers and Lakes (still exist, but their display on the SVG map will be conceptual)
-            { id: 'marikina_river', name: 'Marikina River', type: 'river', baseHeight: 15.0, criticalHeight: 20.0, warningHeight: 18.0, parent: 'marikina' },
-            { id: 'pasig_river', name: 'Pasig River', type: 'river', baseHeight: 5.0, criticalHeight: 7.0, warningHeight: 6.0, parent: 'manila_city' }, // Conceptual parent
-            { id: 'laguna_bay', name: 'Laguna de Bay', type: 'lake', baseHeight: 10.0, criticalHeight: 12.0, warningHeight: 11.0, parent: 'laguna' } // Conceptual parent
-        ];
-
-        let simulatedData = {
-            tropicalCyclones: [],
-            globalPrecipitation: 0
+        // Use a simple global state object to manage the application data
+        const state = {
+            currentFloodHeight: 0,
+            precipitationRate: 0,
+            isSimulationRunning: false,
+            simulationInterval: null,
+            userLocation: 'Manila',
+            evacuationThreshold: 1.0,
+            isEvacuationWarningActive: false,
+            simulationTime: new Date(),
         };
 
-        // Initialize simulatedData for all locations with base flood heights
-        simulatedLocations.forEach(loc => {
-            if (loc.type === 'city' || loc.type === 'town' || loc.type === 'region' || loc.type === 'island_group' || loc.type === 'province') {
-                let base = 0.0;
-                // Assign higher base flood for known flood-prone areas or major regions
-                if (['manila_region', 'marikina', 'manila_city', 'pasig', 'malabon', 'navotas', 'binondo', 'barangay_barangka', 'dampalit', 'tangos'].includes(loc.id)) {
-                    base = getRandomFloat(0.15, 0.4);
-                } else if (['luzon', 'visayas', 'mindanao', 'quezon_city', 'caloocan', 'taguig', 'cavite', 'bulacan'].includes(loc.id)) {
-                    base = getRandomFloat(0.05, 0.2);
-                } else if (loc.type === 'town' || loc.type === 'city' || loc.type === 'province') { // Other main cities/provinces/towns
-                    base = getRandomFloat(0.0, 0.1);
-                }
+        // DOM Elements
+        const startSimulationBtn = document.getElementById('start-simulation-btn');
+        const resetSimulationBtn = document.getElementById('reset-simulation-btn');
+        const currentFloodHeightEl = document.getElementById('current-flood-height');
+        const precipitationRateInput = document.getElementById('precipitation-rate');
+        const precipitationValueEl = document.getElementById('precipitation-value');
+        const evacuationWarningEl = document.getElementById('evacuation-warning');
+        const evacuationThresholdInput = document.getElementById('evacuation-threshold-input');
+        const alarmToggle = document.getElementById('alarm-toggle');
+        const alarmSound = document.getElementById('alarm-sound');
+        const currentTimeEl = document.getElementById('current-time');
+        const currentSimulationTimeEl = document.getElementById('current-simulation-time');
+        const warningsLogEl = document.getElementById('warnings-log');
+        const rainContainer = document.getElementById('rain-container');
+        const currentPrecipitationRateEl = document.getElementById('current-precipitation-rate');
+        const currentLocationEl = document.getElementById('current-location');
+        const pagasaWarningsLog = document.getElementById('pagasa-warnings-log');
 
-                simulatedData[loc.id] = {
-                    baseFloodHeight: parseFloat(base.toFixed(2)),
-                    floodHeight: parseFloat(base.toFixed(2)),
-                    estimatedFloodHeight: parseFloat((base + getRandomFloat(0.05, 0.1)).toFixed(2)),
-                    lastHourIncrease: 0.0,
-                    weather: { temp: getRandomInt(28, 32), humidity: getRandomInt(70, 90), precipitation: 0, forecast: 'Partly cloudy' },
-                    warnings: [],
-                    classSuspension: { kinder: false, elem: false, high: false, college: false, work: false, suspended: false }, // Added 'suspended' flag
-                    warningDelayCounter: 0 // New: to track delay for warnings
-                };
-            } else if (loc.type === 'river' || loc.type === 'lake') {
-                simulatedData[loc.id] = {
-                    currentHeight: loc.baseHeight,
-                    status: 'Normal'
-                };
-            }
-        });
+        // New UI elements
+        const settingsToggleBtn = document.getElementById('settings-toggle-btn');
+        const rightPanel = document.getElementById('right-panel');
+        const checkLocationBtn = document.getElementById('check-location-btn');
+        const userLocationInput = document.getElementById('user-location-input');
+        
+        // Map Layer Toggle Buttons
+        const toggleRainfallWarningsBtn = document.getElementById('toggle-rainfall-warnings-btn');
+        const toggleTcwsBtn = document.getElementById('toggle-tcws-btn');
+        const toggleClassSuspensionBtn = document.getElementById('toggle-class-suspension-btn');
+        
+        // Custom Modal Logic
+        const customModalOverlay = document.getElementById('custom-modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        // Deep copy initial state for reset functionality
-        initialSimulatedData = JSON.parse(JSON.stringify(simulatedData));
-
-        // Simplified SVG Path Data for major island groups and Metro Manila hierarchy
-        // These are very rough approximations and not geographically accurate.
-        const svgPaths = {
-            // National View (Island Groups & some Provinces)
-            national: {
-                viewBox: "0 0 1000 1500", // Overall Philippines view
-                pathLuzon: "M 400 100 L 550 50 L 600 200 L 500 400 L 450 450 L 350 400 L 300 250 Z",
-                pathVisayas: "M 400 600 L 550 550 L 600 700 L 500 800 L 450 750 Z",
-                pathMindanao: "M 450 1000 L 600 950 L 650 1150 L 550 1250 L 500 1200 Z",
-                pathPalawan: "M 250 700 L 280 650 L 300 750 L 270 800 Z", // Conceptual long shape
-                pathMetroManila: "M 440 350 L 480 350 L 480 380 L 440 380 Z", // Small rect within Luzon
-                // Placeholder paths for other provinces
-                pathPangasinan: "M300 150 L350 120 L380 180 L330 210 Z",
-                pathPampanga: "M450 300 L480 280 L510 320 L480 340 Z",
-                pathLaguna: "M500 400 L530 380 L560 420 L530 440 Z",
-                pathBicol: "M550 450 L600 420 L650 500 L600 550 Z",
-                pathCavite: "M400 400 L430 390 L450 420 L420 430 Z",
-                pathBulacan: "M420 280 L450 270 L470 300 L440 310 Z",
-                // Visayas Provinces
-                pathCebu: "M450 650 L480 630 L510 670 L480 690 Z",
-                pathLeyte: "M550 680 L580 660 L610 700 L580 720 Z",
-                pathNegrosOccidental: "M380 700 L410 680 L440 720 L410 740 Z",
-                pathIloilo: "M350 600 L380 580 L410 620 L380 640 Z",
-                // Mindanao Provinces
-                pathDavaoDelSur: "M550 1050 L580 1030 L610 1070 L580 1090 Z",
-                pathZamboangaDelSur: "M400 1100 L430 1080 L460 1120 L430 1140 Z",
-                pathMisamisOriental: "M480 1000 L510 980 L540 1020 L510 1040 Z",
-                pathAgusanDelNorte: "M600 1100 L630 1080 L660 1120 L630 1140 Z"
-            },
-            // Metro Manila City View (when zoomed into Metro Manila) - Expanded and spaced out
-            metro_manila_cities: {
-                viewBox: "0 0 1000 1000", // Larger viewBox for spacing
-                pathQuezonCity: "M 100 100 L 400 100 L 400 350 L 100 350 Z",
-                pathManilaCity: "M 50 400 L 250 400 L 250 600 L 50 600 Z",
-                pathMakati: "M 300 450 L 450 450 L 450 600 L 300 600 Z",
-                pathMarikina: "M 500 200 L 700 200 L 700 350 L 500 350 Z",
-                pathPasay: "M 200 700 L 350 700 L 350 850 L 200 850 Z",
-                pathTaguig: "M 400 700 L 550 700 L 550 850 L 400 850 Z",
-                pathCaloocan: "M 50 0 L 200 0 L 200 80 L 50 80 Z",
-                pathPasig: "M 600 400 L 750 400 L 750 550 L 600 550 Z",
-                pathLasPinas: "M 10 880 L 150 880 L 150 950 L 10 950 Z",
-                pathMalabon: "M 0 100 L 100 100 L 100 180 L 0 180 Z",
-                pathMandaluyong: "M 400 600 L 500 600 L 500 680 L 400 680 Z",
-                pathMuntinlupa: "M 200 900 L 350 900 L 350 980 L 200 980 Z",
-                pathNavotas: "M 0 200 L 80 200 L 80 280 L 0 280 Z",
-                pathParanaque: "M 160 880 L 300 880 L 300 950 L 160 950 Z",
-                pathSanJuan: "M 300 370 L 380 370 L 380 430 L 300 430 Z",
-                pathValenzuela: "M 250 0 L 400 0 L 400 80 L 250 80 Z"
-            },
-            // Specific City Town View (e.g., when zoomed into Quezon City) - Expanded and spaced out
-            quezon_city_towns: {
-                viewBox: "0 0 500 500", // Larger viewBox
-                pathDiliman: "M 50 50 L 200 50 L 200 150 L 50 150 Z",
-                pathCubao: "M 250 80 L 400 80 L 400 180 L 250 180 Z",
-                pathCommonwealth: "M 80 200 L 280 200 L 280 300 L 80 300 Z",
-                pathFairview: "M 300 250 L 450 250 L 450 350 L 300 350 Z",
-                pathTatalon: "M 150 350 L 300 350 L 300 450 L 150 450 Z",
-                pathTandangSora: "M 20 380 L 120 380 L 120 450 L 20 450 Z"
-            },
-            manila_city_towns: {
-                viewBox: "0 0 400 400", // Larger viewBox
-                pathErmita: "M 50 50 L 150 50 L 150 120 L 50 120 Z",
-                pathIntramuros: "M 200 80 L 300 80 L 300 150 L 200 150 Z",
-                pathBinondo: "M 80 180 L 180 180 L 180 250 L 80 250 Z",
-                pathSampaloc: "M 220 200 L 320 200 L 320 270 L 220 270 Z",
-                pathMalate: "M 100 300 L 200 300 L 200 370 L 100 370 Z",
-                pathTondo: "M 20 280 L 100 280 L 100 350 L 20 350 Z"
-            },
-            makati_towns: {
-                viewBox: "0 0 300 300",
-                pathAyalaCenter: "M 30 30 L 120 30 L 120 100 L 30 100 Z",
-                pathEastRembo: "M 150 50 L 250 50 L 250 120 L 150 120 Z",
-                pathPoblacion: "M 80 150 L 180 150 L 180 220 L 80 220 Z",
-                pathWestRembo: "M 100 230 L 200 230 L 200 280 L 100 280 Z",
-                pathPembo: "M 20 200 L 90 200 L 90 260 L 20 260 Z"
-            },
-            marikina_towns: {
-                viewBox: "0 0 300 300",
-                pathBrgyManggahan: "M 20 20 L 100 20 L 100 80 L 20 80 Z",
-                pathBrgyConcepcion: "M 120 50 L 200 50 L 200 110 L 120 110 Z",
-                pathBrgyBarangka: "M 50 120 L 150 120 L 150 180 L 50 180 Z",
-                pathBrgyTumana: "M 180 100 L 250 100 L 250 160 L 180 160 Z"
-            },
-            pasig_towns: {
-                viewBox: "0 0 300 300",
-                pathBrgySanAntonio: "M 30 30 L 120 30 L 120 90 L 30 90 Z",
-                pathBrgyRosario: "M 150 60 L 240 60 L 240 120 L 150 120 Z",
-                pathBrgyOrtigas: "M 80 150 L 180 150 L 180 210 L 80 210 Z",
-                pathBrgyKapitolyo: "M 20 200 L 100 200 L 100 260 L 20 260 Z"
-            },
-            caloocan_towns: {
-                viewBox: "0 0 200 200",
-                pathBrgy176: "M 10 10 L 180 10 L 180 80 L 10 80 Z",
-                pathBrgy177: "M 50 100 L 150 100 L 150 160 L 50 160 Z",
-                pathBrgy178: "M 10 120 L 80 120 L 80 180 L 10 180 Z"
-            },
-            taguig_towns: {
-                viewBox: "0 0 200 200",
-                pathFortBonifacio: "M 20 20 L 100 20 L 100 100 L 20 100 Z",
-                pathUsusan: "M 120 50 L 180 50 L 180 120 L 120 120 Z",
-                pathSignalVillage: "M 50 120 L 120 120 L 120 180 L 50 180 Z"
-            },
-            las_pinas_towns: {
-                viewBox: "0 0 200 200",
-                pathAlmanzaUno: "M 30 30 L 150 30 L 150 100 L 30 100 Z",
-                pathTalonTres: "M 50 120 L 170 120 L 170 180 L 50 180 Z"
-            },
-            malabon_towns: {
-                viewBox: "0 0 150 150",
-                pathDampalit: "M 20 20 L 100 20 L 100 80 L 20 80 Z",
-                pathTinajeros: "M 40 90 L 120 90 L 120 140 L 40 140 Z"
-            },
-            mandaluyong_towns: {
-                viewBox: "0 0 150 150",
-                pathBarangkaItaas: "M 30 30 L 120 30 L 120 90 L 30 90 Z",
-                pathPlainview: "M 50 100 L 130 100 L 130 140 L 50 140 Z"
-            },
-            muntinlupa_towns: {
-                viewBox: "0 0 200 200",
-                pathAlabang: "M 40 40 L 160 40 L 160 120 L 40 120 Z",
-                pathSucat: "M 60 130 L 180 130 L 180 190 L 60 190 Z"
-            },
-            navotas_towns: {
-                viewBox: "0 0 150 150",
-                pathTangos: "M 20 20 L 100 20 L 100 80 L 20 80 Z",
-                pathBagumbayan: "M 40 90 L 120 90 L 120 140 L 40 140 Z"
-            },
-            paranaque_towns: {
-                viewBox: "0 0 200 200",
-                pathBFHomes: "M 30 30 L 150 30 L 150 100 L 30 100 Z",
-                pathSanDioniso: "M 50 120 L 170 120 L 170 180 L 50 180 Z"
-            },
-            pasay_towns: {
-                viewBox: "0 0 150 150",
-                pathEpifanioDelosSantos: "M 20 20 L 120 20 L 120 90 L 20 90 Z",
-                pathMalibay: "M 40 100 L 140 100 L 140 140 L 40 140 Z"
-            },
-            san_juan_towns: {
-                viewBox: "0 0 100 100",
-                pathGreenhills: "M 10 10 L 90 10 L 90 90 L 10 90 Z",
-                pathSantaLucia: "M 20 60 L 80 60 L 80 90 L 20 90 Z"
-            },
-            valenzuela_towns: {
-                viewBox: "0 0 150 150",
-                pathMalinta: "M 20 20 L 120 20 L 120 90 L 20 90 Z",
-                pathKaruhatan: "M 40 100 L 140 100 L 140 140 L 40 140 Z"
-            },
-            cavite_cities: {
-                viewBox: "0 0 300 300",
-                pathBacoor: "M 50 50 L 150 50 L 150 120 L 50 120 Z",
-                pathImus: "M 100 150 L 200 150 L 200 220 L 100 220 Z",
-                pathDasmarinas: "M 150 80 L 250 80 L 250 150 L 150 150 Z"
-            },
-            bulacan_cities: {
-                viewBox: "0 0 300 300",
-                pathMalolos: "M 50 50 L 150 50 L 150 120 L 50 120 Z",
-                pathSanJoseDelMonte: "M 100 150 L 200 150 L 200 220 L 100 220 Z",
-                pathMeycauayan: "M 150 80 L 250 80 L 250 150 L 150 150 Z"
-            }
-        };
-
-
-        // --- Utility Functions ---
-
-        /**
-         * Displays a custom modal message. Can include an input field and confirm button.
-         * @param {string} title - The title of the modal.
-         * @param {string} message - The message content.
-         * @param {boolean} showInput - Whether to show the input textarea.
-         * @param {boolean} showConfirm - Whether to show the confirm button.
-         * @returns {Promise<string|null>} Resolves with input value if confirmed, null if closed.
-         */
-        function showCustomModal(title, message, showInput = false, showConfirm = false) {
-            return new Promise((resolve) => {
-                const modalTitle = document.getElementById('modalTitle');
-                const modalMessage = document.getElementById('modalMessage');
-                const modalInputContainer = document.getElementById('modalInputContainer');
-                const modalInput = document.getElementById('modalInput');
-                const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-                const modalCloseBtn = document.getElementById('modalCloseBtn');
-                const customModal = document.getElementById('customModal');
-                const modalLoading = document.getElementById('modalLoading');
-                const modalActions = document.getElementById('modalActions');
-
-
-                modalTitle.textContent = title;
-                modalMessage.textContent = message;
-                modalInputContainer.classList.toggle('hidden', !showInput);
-                modalInput.value = ''; // Clear previous input
-                modalConfirmBtn.classList.toggle('hidden', !showConfirm);
-                modalCloseBtn.textContent = showConfirm ? 'Cancel' : 'OK'; // Change text if confirm is present
-                modalLoading.classList.add('hidden'); // Hide loading by default
-
-                customModal.style.display = 'flex';
-
-                const handleConfirm = () => {
-                    closeCustomModal();
-                    resolve(showInput ? modalInput.value : true);
-                    removeListeners();
-                };
-
-                const handleClose = () => {
-                    closeCustomModal();
-                    resolve(null); // Resolve with null if cancelled/closed
-                    removeListeners();
-                };
-
-                modalConfirmBtn.addEventListener('click', handleConfirm);
-                modalCloseBtn.addEventListener('click', handleClose);
-
-                const removeListeners = () => {
-                    modalConfirmBtn.removeEventListener('click', handleConfirm);
-                    modalCloseBtn.removeEventListener('click', handleClose);
-                };
-            });
+        function showCustomModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            customModalOverlay.style.display = 'flex';
         }
 
-        /**
-         * Closes the custom modal.
-         */
         function closeCustomModal() {
-            document.getElementById('customModal').style.display = 'none';
+            customModalOverlay.style.display = 'none';
         }
 
-        /**
-         * Shows the loading spinner in the modal.
-         */
-        function showModalLoading() {
-            document.getElementById('modalActions').classList.add('hidden');
-            document.getElementById('modalLoading').classList.remove('hidden');
-        }
+        // --- Map Initialization ---
+        let map;
+        let floodMarker;
+        let roadsLayer;
+        let rainfallWarningLayer;
+        let tcwsLayer;
+        let classSuspensionLayer;
 
-        /**
-         * Hides the loading spinner in the modal.
-         */
-        function hideModalLoading() {
-            document.getElementById('modalActions').classList.remove('hidden');
-            document.getElementById('modalLoading').classList.add('hidden');
-        }
+        const simulatedRoadsGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "name": "EDSA", "flood_level": 0.0, "location": "Manila" },
+                    "geometry": { "type": "LineString", "coordinates": [[14.6091, 121.0560], [14.5824, 121.0531], [14.5501, 121.0454]] }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Roxas Boulevard", "flood_level": 0.0, "location": "Manila" },
+                    "geometry": { "type": "LineString", "coordinates": [[14.5684, 120.9754], [14.5595, 120.9818], [14.5447, 120.9840]] }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Taft Avenue", "flood_level": 0.0, "location": "Manila" },
+                    "geometry": { "type": "LineString", "coordinates": [[14.5888, 120.9926], [14.5663, 120.9901], [14.5540, 120.9880]] }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Osmeña Boulevard", "flood_level": 0.0, "location": "Cebu" },
+                    "geometry": { "type": "LineString", "coordinates": [[10.3175, 123.8913], [10.3010, 123.8860], [10.2912, 123.8830]] }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Lacson Street", "flood_level": 0.0, "location": "Bacolod" },
+                    "geometry": { "type": "LineString", "coordinates": [[10.6865, 122.9515], [10.6720, 122.9550], [10.6580, 122.9610]] }
+                }
+            ]
+        };
 
-        /**
-         * Generates a random float between min and max.
-         * @param {number} min - Minimum value.
-         * @param {number} max - Maximum value.
-         * @returns {number} Random float.
-         */
-        function getRandomFloat(min, max) {
-            return Math.random() * (max - min) + min;
-        }
-
-        /**
-         * Generates a random integer between min and max (inclusive).
-         * @param {number} min - Minimum value.
-         * @param {number} max - Maximum value.
-         * @returns {number} Random integer.
-         */
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        /**
-         * Gets the location object by its SVG path ID.
-         * @param {string} svgPathId - The ID of the SVG path.
-         * @returns {object|null} The corresponding location object or null if not found.
-         */
-        function getSvgLocationById(svgPathId) {
-            return simulatedLocations.find(loc => loc.svgPathId === svgPathId);
-        }
-
-        /**
-         * Updates the area information panel.
-         * @param {object} locationData - Data for the selected location.
-         */
-        function updateAreaInfoPanel(locationData) {
-            currentSelectedLocation = locationData; // Store the selected location
-            const areaInfoDiv = document.getElementById('areaInfo');
-            const weatherForecastDiv = document.getElementById('weatherForecast');
-
-            if (!locationData) {
-                areaInfoDiv.innerHTML = '<p>Click on the map or use "Check My Location" to view details.</p>';
-                weatherForecastDiv.innerHTML = '<p>No forecast available for selected area.</p>';
-                return;
+        const simulatedWarningAreas = {
+            rainfall: {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "properties": { "name": "Rainfall Warning Area" },
+                    "geometry": { "type": "Polygon", "coordinates": [[
+                        [14.65, 120.9], [14.7, 121.1], [14.5, 121.2], [14.45, 121.0], [14.65, 120.9]
+                    ]]}
+                }]
+            },
+            tcws: {
+                 "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "properties": { "name": "TCWS Area" },
+                    "geometry": { "type": "Polygon", "coordinates": [[
+                        [14.7, 120.8], [14.8, 121.0], [14.6, 121.2], [14.5, 121.0], [14.7, 120.8]
+                    ]]}
+                }]
+            },
+            classSuspension: {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "properties": { "name": "Class Suspension Area" },
+                    "geometry": { "type": "Polygon", "coordinates": [[
+                        [14.5, 120.9], [14.6, 121.0], [14.5, 121.1], [14.4, 121.0], [14.5, 120.9]
+                    ]]}
+                }]
             }
+        };
 
-            let data = simulatedData[locationData.id];
-
-            if (!data) {
-                areaInfoDiv.innerHTML = `<p>No detailed data for ${locationData.name}.</p>`;
-                weatherForecastDiv.innerHTML = `<p>No forecast available for ${locationData.name}.</p>`;
-                return;
+        function styleRoads(feature) {
+            let color = '#4CAF50'; // Green for normal
+            if (feature.properties.flood_level > 0.8) {
+                color = '#F44336'; // Red for evacuation
+            } else if (feature.properties.flood_level > 0.5) {
+                color = '#FF5722'; // Orange for major
+            } else if (feature.properties.flood_level > 0.2) {
+                color = '#FFC107'; // Yellow for minor
             }
-
-            let floodStatus = 'Normal';
-            if (data.floodHeight > 2.0) floodStatus = 'Critical';
-            else if (data.floodHeight > 1.0) floodStatus = 'High';
-            else if (data.floodHeight > 0.0) floodStatus = 'Low';
-
-            let classSuspensionText = 'No';
-            if (data.classSuspension && data.classSuspension.suspended) { // Check the new 'suspended' flag
-                let suspendedLevels = [];
-                if (data.classSuspension.kinder) suspendedLevels.push('Kinder');
-                if (data.classSuspension.elem) suspendedLevels.push('Elementary');
-                if (data.classSuspension.high) suspendedLevels.push('High School');
-                if (data.classSuspension.college) suspendedLevels.push('College');
-                classSuspensionText = `<span class="text-red-600 font-bold">YES (${suspendedLevels.join(', ')})</span>`;
-            }
-
-            areaInfoDiv.innerHTML = `
-                <p><strong class="text-gray-900">Location:</strong> ${locationData.name}</p>
-                <p><strong class="text-gray-900">Elevation:</strong> ${locationData.seaLevelElevation.toFixed(1)} meters above sea level</p>
-                <p><strong class="text-gray-900">Current Flood Height:</strong> ${data.floodHeight.toFixed(2)} meters (${floodStatus})</p>
-                <p><strong class="text-gray-900">Estimated Flood Height:</strong> ${data.estimatedFloodHeight.toFixed(2)} meters</p>
-                <p><strong class="text-gray-900">Last Hour Increase:</strong> ${data.lastHourIncrease.toFixed(2)} meters</p>
-                <p><strong class="text-gray-900">Class Suspension:</strong> ${classSuspensionText}</p>
-                <p><strong class="text-gray-900">Work Suspension:</strong> ${data.classSuspension && data.classSuspension.work ? '<span class="text-red-600 font-bold">YES</span>' : 'No'}</p>
-            `;
-
-            weatherForecastDiv.innerHTML = `
-                <p><strong class="text-gray-900">Temperature:</strong> ${data.weather.temp}°C</p>
-                <p><strong class="text-gray-900">Humidity:</strong> ${data.weather.humidity}%</p>
-                <p><strong class="text-gray-900">Precipitation:</strong> ${data.weather.precipitation.toFixed(1)} mm/hr</p>
-                <p><strong class="text-gray-900">Forecast:</strong> ${data.weather.forecast}</p>
-            `;
+            return {
+                color: color,
+                weight: 5,
+                opacity: 0.8
+            };
         }
-
-        // --- SVG Map Functions ---
-
-        /**
-         * Renders the SVG map based on the current zoom level.
-         */
-        function renderSvgMap() {
-            console.log(`renderSvgMap called for level: ${currentMapZoomLevel}`);
-            const mapSvg = document.getElementById('mapSvg');
-            mapSvg.innerHTML = ''; // Clear existing SVG content
-
-            let pathsToDraw = {};
-            let viewBox = "0 0 1000 1500"; // Default national view
+        
+        function renderRoads() {
+            if (roadsLayer) {
+                map.removeLayer(roadsLayer);
+            }
             
-            if (currentMapZoomLevel === 'national') {
-                pathsToDraw = svgPaths.national;
-                viewBox = svgPaths.national.viewBox;
-                document.getElementById('backToPHMapBtn').classList.add('hidden');
-                document.getElementById('backToMetroManilaBtn').classList.add('hidden');
-            } else if (currentMapZoomLevel === 'metro_manila_cities') {
-                pathsToDraw = svgPaths.metro_manila_cities;
-                viewBox = svgPaths.metro_manila_cities.viewBox;
-                document.getElementById('backToPHMapBtn').classList.remove('hidden');
-                document.getElementById('backToMetroManilaBtn').classList.add('hidden'); // Hide this as we are already in MM cities
-            } else if (currentMapZoomLevel.endsWith('_towns') || currentMapZoomLevel.endsWith('_cities')) { // For city-level zooms like Cavite/Bulacan
-                const parentId = currentMapZoomLevel.substring(0, currentMapZoomLevel.lastIndexOf('_'));
-                pathsToDraw = svgPaths[currentMapZoomLevel];
-                viewBox = svgPaths[currentMapZoomLevel].viewBox;
-                document.getElementById('backToPHMapBtn').classList.remove('hidden');
-                // Show back to Metro Manila button only if the parent is Metro Manila
-                if (simulatedLocations.find(loc => loc.id === parentId)?.parent === 'manila_region') {
-                    document.getElementById('backToMetroManilaBtn').classList.remove('hidden');
-                } else {
-                    document.getElementById('backToMetroManilaBtn').classList.add('hidden');
+            roadsLayer = L.geoJSON(simulatedRoadsGeoJSON, {
+                style: styleRoads,
+                onEachFeature: function(feature, layer) {
+                    layer.bindPopup(`<b>${feature.properties.name}</b><br>Flood Level: ${feature.properties.flood_level.toFixed(2)}m`);
                 }
-            }
-
-            mapSvg.setAttribute('viewBox', viewBox);
-
-            for (const id in pathsToDraw) {
-                if (id === 'viewBox') continue; // Skip viewBox property
-
-                const pathData = pathsToDraw[id];
-                const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                pathElement.setAttribute("d", pathData);
-                pathElement.setAttribute("id", id);
-                pathElement.classList.add("region-polygon");
-                
-                // Attach click listener to each path
-                pathElement.addEventListener('click', () => {
-                    // Remove 'selected' class from previously selected polygon
-                    if (selectedRegionPolygon) {
-                        selectedRegionPolygon.classList.remove('selected');
-                    }
-                    // Add 'selected' class to the newly clicked polygon
-                    pathElement.classList.add('selected');
-                    selectedRegionPolygon = pathElement;
-
-                    const location = getSvgLocationById(id);
-                    if (location) {
-                        updateAreaInfoPanel(location);
-
-                        if (location.id === 'manila_region' && currentMapZoomLevel === 'national') {
-                            currentMapZoomLevel = 'metro_manila_cities';
-                            currentParentLocationId = 'national'; // Set parent for back button
-                            renderSvgMap(); // Re-render with city view
-                        } else if (location.type === 'city' && currentMapZoomLevel === 'metro_manila_cities' && svgPaths[`${location.id}_towns`]) {
-                            currentMapZoomLevel = `${location.id}_towns`;
-                            currentParentLocationId = 'metro_manila_cities'; // Set parent for back button
-                            renderSvgMap(); // Re-render with town view
-                        } else if (location.type === 'province' && currentMapZoomLevel === 'national' && svgPaths[`${location.id}_cities`]) {
-                            // For provinces like Cavite/Bulacan, zoom into their cities
-                            currentMapZoomLevel = `${location.id}_cities`;
-                            currentParentLocationId = 'national';
-                            renderSvgMap();
-                        }
-                    } else {
-                        updateAreaInfoPanel(null);
-                    }
-                    redrawMapLayers(); // Update colors based on data
-                });
-                mapSvg.appendChild(pathElement);
-
-                // Add text label for the region
-                const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                textElement.classList.add("region-label");
-                const location = getSvgLocationById(id); // Re-fetch location to get name
-                textElement.textContent = location ? location.name : id; // Use location name if available
-
-                // Calculate approximate center of the polygon for text placement
-                // This is a simplified approach and may not be perfect for complex shapes
-                const bbox = pathElement.getBBox();
-                textElement.setAttribute("x", bbox.x + bbox.width / 2);
-                textElement.setAttribute("y", bbox.y + bbox.height / 2);
-                
-                mapSvg.appendChild(textElement);
-            }
-            redrawMapLayers(); // Initial drawing of layers/colors
+            }).addTo(map);
         }
 
-
-        /**
-         * Redraws all active layers on the SVG map (updates colors based on data and toggles).
-         */
-        function redrawMapLayers() {
-            const mapSvg = document.getElementById('mapSvg');
-            // Remove all existing value labels first
-            Array.from(mapSvg.querySelectorAll('.value-label')).forEach(label => label.remove());
-
-            const toggleFloodHeightBtn = document.getElementById('toggleFloodHeight');
-            const togglePrecipitationBtn = document.getElementById('togglePrecipitation');
-            const toggleRainfallWarningsBtn = document.getElementById('toggleRainfallWarnings'); // New
-            const toggleTCWSBtn = document.getElementById('toggleTCWS'); // New
-            const toggleClassSuspensionBtn = document.getElementById('toggleClassSuspension');
-
-            const showFlood = toggleFloodHeightBtn.classList.contains('bg-blue-600');
-            const showPrecipitation = togglePrecipitationBtn.classList.contains('bg-blue-600');
-            const showRainfallWarnings = toggleRainfallWarningsBtn.classList.contains('bg-blue-600');
-            const showTCWS = toggleTCWSBtn.classList.contains('bg-blue-600');
-            const showClassSuspension = toggleClassSuspensionBtn.classList.contains('bg-blue-600');
-
-            let pathsToColor = {};
-            if (currentMapZoomLevel === 'national') {
-                pathsToColor = svgPaths.national;
-            } else if (currentMapZoomLevel === 'metro_manila_cities') {
-                pathsToColor = svgPaths.metro_manila_cities;
-            } else if (currentMapZoomLevel.endsWith('_towns') || currentMapZoomLevel.endsWith('_cities')) {
-                pathsToColor = svgPaths[currentMapZoomLevel];
+        function initializeMap() {
+            if (map) {
+                map.remove();
             }
 
-            for (const id in pathsToColor) {
-                if (id === 'viewBox') continue;
+            const manilaCoords = [14.5995, 120.9842];
+            map = L.map('map').setView(manilaCoords, 10);
 
-                const pathElement = document.getElementById(id);
-                if (!pathElement) continue;
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-                const location = simulatedLocations.find(loc => loc.svgPathId === id);
-                if (!location) continue;
-
-                const data = simulatedData[location.id];
-                if (!data) {
-                    pathElement.style.fill = '#a0c4ff'; // Default blue
-                    continue;
-                }
-
-                // Reset fill for each redraw to apply new conditions
-                pathElement.style.fill = '#a0c4ff'; // Default blue
-
-                let labelText = ''; // For displaying values on the map
-
-                // Apply colors based on toggled layers and data priority
-                // Class Suspension takes highest priority to clearly indicate affected areas
-                if (showClassSuspension && data.classSuspension && data.classSuspension.suspended) {
-                    pathElement.style.fill = '#800000'; // Maroon for class/work suspension
-                    labelText = 'SUSPENDED';
-                } else if (showRainfallWarnings && data.warnings.some(w => w.type === 'Heavy Rainfall Warning')) {
-                    const rainfallWarning = data.warnings.find(w => w.type === 'Heavy Rainfall Warning');
-                    if (rainfallWarning) {
-                        if (rainfallWarning.level.includes('Red')) {
-                            pathElement.style.fill = '#FF0000'; // Red
-                            labelText = 'RED WARNING';
-                        } else if (rainfallWarning.level.includes('Orange')) {
-                            pathElement.style.fill = '#FFA500'; // Orange
-                            labelText = 'ORANGE WARNING';
-                        } else if (rainfallWarning.level.includes('Yellow')) {
-                            pathElement.style.fill = '#FFFF00'; // Yellow
-                            labelText = 'YELLOW WARNING';
-                        }
-                    }
-                } else if (showTCWS && data.warnings.some(w => w.type === 'Tropical Cyclone Warning')) {
-                    const cycloneWarning = data.warnings.find(w => w.type === 'Tropical Cyclone Warning');
-                    if (cycloneWarning) {
-                        if (cycloneWarning.level.includes('Signal No. 5')) {
-                            pathElement.style.fill = '#8B0000'; // Dark Red for Signal 5
-                            labelText = 'TCWS 5';
-                        } else if (cycloneWarning.level.includes('Signal No. 4')) {
-                            pathElement.style.fill = '#DC143C'; // Crimson for Signal 4
-                            labelText = 'TCWS 4';
-                        } else if (cycloneWarning.level.includes('Signal No. 3')) {
-                            pathElement.style.fill = '#FF4500'; // Orange-Red for Signal 3
-                            labelText = 'TCWS 3';
-                        } else if (cycloneWarning.level.includes('Signal No. 2')) {
-                            pathElement.style.fill = '#FFD700'; // Gold for Signal 2
-                            labelText = 'TCWS 2';
-                        } else if (cycloneWarning.level.includes('Signal No. 1')) {
-                            pathElement.style.fill = '#ADD8E6'; // Light Blue for Signal 1
-                            labelText = 'TCWS 1';
-                        }
-                    }
-                } else if (showFlood) {
-                    if (data.floodHeight > 2.0) {
-                        pathElement.style.fill = '#FF0000'; // Red (>2m)
-                    } else if (data.floodHeight > 1.0) {
-                        pathElement.style.fill = '#FFFFFF'; // White (1.01m-2m)
-                    } else if (data.floodHeight > 0.0) {
-                        pathElement.style.fill = '#008000'; // Green (<1m)
-                    }
-                    labelText = `${data.floodHeight.toFixed(2)}m`;
-                } else if (showPrecipitation) {
-                    if (data.weather.precipitation > 30) {
-                        pathElement.style.fill = '#800080'; // Purple (>30mm/hr)
-                    } else if (data.weather.precipitation > 15) {
-                        pathElement.style.fill = '#00008B'; // Dark Blue (15.01-30mm/hr)
-                    } else if (data.weather.precipitation > 5) {
-                        pathElement.style.fill = '#4169E1'; // Royal Blue (5.01-15mm/hr)
-                    } else if (data.weather.precipitation > 0) {
-                        pathElement.style.fill = '#ADD8E6'; // Light Blue (0-5mm/hr)
-                    }
-                    labelText = `${data.weather.precipitation.toFixed(1)}mm/hr`;
-                }
-                
-                // Add value label if applicable
-                if (labelText) {
-                    const valueLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    valueLabel.classList.add("value-label");
-                    valueLabel.textContent = labelText;
-                    const bbox = pathElement.getBBox();
-                    valueLabel.setAttribute("x", bbox.x + bbox.width / 2);
-                    valueLabel.setAttribute("y", bbox.y + bbox.height / 2 + 10); // Offset slightly below region name
-                    mapSvg.appendChild(valueLabel);
-                }
-            }
-        }
-
-
-        // --- LLM Integration ---
-
-        /**
-         * Calls the Gemini API to get a response based on a prompt.
-         * @param {string} prompt - The prompt to send to the LLM.
-         * @returns {Promise<string>} The LLM's response.
-         */
-        async function callGeminiAPI(prompt) {
-            showModalLoading(); // Show loading spinner
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-            const payload = { contents: chatHistory };
-            const apiKey = ""; // Canvas will automatically provide this in runtime
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    return result.candidates[0].content.parts[0].text;
-                } else {
-                    console.error('Unexpected LLM response structure:', result);
-                    return 'Sorry, I could not get a clear response from the AI.';
-                }
-            } catch (error) {
-                console.error('Error calling Gemini API:', error);
-                return 'An error occurred while communicating with the AI. Please try again.';
-            } finally {
-                hideModalLoading(); // Hide loading spinner
-            }
-        }
-
-        /**
-         * Handles the "Ask LLM for Flood Info" button click.
-         */
-        async function handleAskLLMClick() {
-            if (!currentSelectedLocation) {
-                showCustomModal('No Location Selected', 'Please click on an area on the map or use "Check My Location" first.');
-                return;
-            }
-
-            const locationName = currentSelectedLocation.name;
-            const locationData = simulatedData[currentSelectedLocation.id];
-
-            if (!locationData) {
-                showCustomModal('No Data', `No simulated data available for ${locationName}.`);
-                return;
-            }
-
-            let classSuspensionSummary = 'No class suspensions.';
-            if (locationData.classSuspension && locationData.classSuspension.suspended) {
-                let suspendedLevels = [];
-                if (locationData.classSuspension.kinder) suspendedLevels.push('Kinder');
-                if (locationData.classSuspension.elem) suspendedLevels.push('Elementary');
-                if (locationData.classSuspension.high) suspendedLevels.push('High School');
-                if (locationData.classSuspension.college) suspendedLevels.push('College');
-                classSuspensionSummary = `Classes suspended for: ${suspendedLevels.join(', ')}.`;
-            }
-            const workSuspensionSummary = locationData.classSuspension && locationData.classSuspension.work ? 'Work is also suspended.' : 'Normal work operations.';
-
-
-            const promptMessage = `Please provide a detailed flood and weather summary for ${locationName} based on the following data:
-            - Current Flood Height: ${locationData.floodHeight.toFixed(2)} meters
-            - Estimated Flood Height: ${locationData.estimatedFloodHeight.toFixed(2)} meters
-            - Last Hour Increase: ${locationData.lastHourIncrease.toFixed(2)} meters
-            - Class Suspension: ${classSuspensionSummary}
-            - Work Suspension: ${workSuspensionSummary}
-            - Temperature: ${locationData.weather.temp}°C
-            - Humidity: ${locationData.weather.humidity}%
-            - Precipitation: ${locationData.weather.precipitation.toFixed(1)} mm/hr
-            - Forecast: ${locationData.weather.forecast}
-            - Active Warnings: ${locationData.warnings.map(w => `${w.type} (${w.level})`).join(', ') || 'None'}
+            floodMarker = L.marker(manilaCoords).addTo(map)
+                .bindPopup("Your Location: Manila").openPopup();
             
-            Also, if there are any rivers/lakes nearby, include their current status:
-            - Marikina River: Height ${simulatedData.marikina_river.currentHeight.toFixed(2)}m, Status: ${simulatedData.marikina_river.status}
-            - Pasig River: Height ${simulatedData.pasig_river.currentHeight.toFixed(2)}m, Status: ${simulatedData.pasig_river.status}
-            - Laguna de Bay: Height ${simulatedData.laguna_bay.currentHeight.toFixed(2)}m, Status: ${simulatedData.laguna_bay.status}
-
-            Provide a concise summary, suitable for a public announcement or a quick briefing.`;
-
-            const userQuestion = await showCustomModal(
-                'Ask the AI about Flood & Weather',
-                'What would you like to know about the current flood and weather situation in this area?',
-                true, // Show input
-                true  // Show confirm
-            );
-
-            if (userQuestion !== null) { // If user clicked Confirm or OK
-                const fullPrompt = `${promptMessage}\n\nUser's specific question: ${userQuestion}`;
-                const llmResponse = await callGeminiAPI(fullPrompt);
-                showCustomModal('AI Response', llmResponse);
-            }
+            renderRoads();
+            updateMapLocation();
         }
 
+        function updateMapLocation() {
+            const locations = {
+                'Manila': [14.5995, 120.9842],
+                'Cebu': [10.3157, 123.8854],
+                'Bacolod': [10.6865, 122.9515],
+            };
+            const newCoords = locations[state.userLocation] || locations['Manila'];
 
-        // --- PAGASA Page Update Function ---
-        function updatePagasaPage() {
-            const rainfallWarningsContainer = document.getElementById('rainfallWarningsContainer');
-            const tcwsContainer = document.getElementById('tcwsContainer');
-            const suspensionsContainer = document.getElementById('suspensionsContainer');
-
-            rainfallWarningsContainer.innerHTML = '';
-            tcwsContainer.innerHTML = '';
-            suspensionsContainer.innerHTML = '';
-
-            let allRainfallWarnings = [];
-            let allTCWS = [];
-            let allSuspensions = [];
-
-            // Collect all warnings and suspensions from all simulated locations
-            simulatedLocations.forEach(loc => {
-                const data = simulatedData[loc.id];
-                if (data) {
-                    if (data.warnings && data.warnings.length > 0) {
-                        data.warnings.forEach(warning => {
-                            if (warning.type === 'Heavy Rainfall Warning') {
-                                allRainfallWarnings.push({ ...warning, area: loc.name });
-                            } else if (warning.type === 'Tropical Cyclone Warning') {
-                                allTCWS.push({ ...warning, area: loc.name });
-                            }
-                        });
-                    }
-                    if (data.classSuspension && data.classSuspension.suspended) { // Added check for data.classSuspension
-                        allSuspensions.push({ ...data.classSuspension, area: loc.name });
-                    }
-                }
-            });
-
-            // Display Rainfall Warnings
-            if (allRainfallWarnings.length > 0) {
-                const groupedRainfallWarnings = allRainfallWarnings.reduce((acc, warning) => {
-                    const level = warning.level;
-                    if (!acc[level]) {
-                        acc[level] = [];
-                    }
-                    acc[level].push(warning);
-                    return acc;
-                }, {});
-
-                for (const level in groupedRainfallWarnings) {
-                    const levelGroup = document.createElement('div');
-                    levelGroup.className = 'mb-4';
-                    levelGroup.innerHTML = `<h4 class="font-bold text-lg mb-1">${level}</h4>`;
-                    groupedRainfallWarnings[level].forEach(warning => {
-                        const warningCard = document.createElement('div');
-                        warningCard.className = 'warning-card';
-                        warningCard.innerHTML = `<p><strong>Area:</strong> ${warning.area}</p><p><strong>Status:</strong> ${warning.status}</p><p><strong>Source:</strong> PAGASA</p>`;
-                        levelGroup.appendChild(warningCard);
-                    });
-                    rainfallWarningsContainer.appendChild(levelGroup);
-                }
-            } else {
-                rainfallWarningsContainer.innerHTML = '<p class="text-gray-600">No active rainfall warnings.</p>';
+            if (map && floodMarker) {
+                floodMarker.setLatLng(newCoords);
+                floodMarker.setPopupContent(`Your Location: ${state.userLocation}`).openPopup();
+                map.setView(newCoords, 10);
             }
-
-            // Display TCWS
-            if (allTCWS.length > 0) {
-                const groupedTCWS = allTCWS.reduce((acc, warning) => {
-                    const level = warning.level;
-                    if (!acc[level]) {
-                        acc[level] = [];
-                    }
-                    acc[level].push(warning);
-                    return acc;
-                }, {});
-
-                for (const level in groupedTCWS) {
-                    const levelGroup = document.createElement('div');
-                    levelGroup.className = 'mb-4';
-                    levelGroup.innerHTML = `<h4 class="font-bold text-lg mb-1">${level}</h4>`;
-                    groupedTCWS[level].forEach(warning => {
-                        const cycloneCard = document.createElement('div');
-                        cycloneCard.className = 'cyclone-card';
-                        cycloneCard.innerHTML = `<p><strong>Area:</strong> ${warning.area}</p><p><strong>Status:</strong> ${warning.status}</p><p><strong>Source:</strong> PAGASA</p>`;
-                        levelGroup.appendChild(cycloneCard);
-                    });
-                    tcwsContainer.appendChild(levelGroup);
-                }
-            } else {
-                tcwsContainer.innerHTML = '<p class="text-gray-600">No active TCWS.</p>';
-            }
-
-            // Display Class & Work Suspensions
-            if (allSuspensions.length > 0) {
-                // Group by suspension levels
-                const groupedSuspensions = {};
-                allSuspensions.forEach(suspension => {
-                    let keyParts = [];
-                    if (suspension.kinder) keyParts.push('Kinder');
-                    if (suspension.elem) keyParts.push('Elementary');
-                    if (suspension.high) keyParts.push('High School');
-                    if (suspension.college) keyParts.push('College');
-                    if (suspension.work) keyParts.push('Work');
-
-                    let key = keyParts.length > 0 ? keyParts.join(' & ') + ' Suspended' : 'No Suspension Info';
-                    if (suspension.work && keyParts.length === 0) key = 'Work Suspended'; // Special case if only work is suspended
-
-                    if (!groupedSuspensions[key]) {
-                        groupedSuspensions[key] = [];
-                    }
-                    groupedSuspensions[key].push(suspension.area);
-                });
-
-                for (const key in groupedSuspensions) {
-                    const suspensionGroup = document.createElement('div');
-                    suspensionGroup.className = 'info-card mb-4';
-                    suspensionGroup.innerHTML = `
-                        <h4 class="font-bold text-lg mb-1">${key}:</h4>
-                        <p>${groupedSuspensions[key].join(', ')}</p>
-                        <p><strong>Source:</strong> PAGASA</p>
-                    `;
-                    suspensionsContainer.appendChild(suspensionGroup);
-                }
-
-            } else {
-                suspensionsContainer.innerHTML = '<p class="text-gray-600">No active suspensions.</p>';
-            }
-
-            // Water Body Levels (remains the same)
-            const lagunaBayHeightSpan = document.getElementById('lagunaBayHeight');
-            const lagunaBayStatusSpan = document.getElementById('lagunaBayStatus');
-            const pasigRiverHeightSpan = document.getElementById('pasigRiverHeight');
-            const pasigRiverStatusSpan = document.getElementById('pasigRiverStatus');
-            const marikinaRiverHeightSpan = document.getElementById('marikinaRiverHeight');
-            const marikinaRiverStatusSpan = document.getElementById('marikinaRiverStatus');
-
-            if (simulatedData.laguna_bay) {
-                lagunaBayHeightSpan.textContent = `${simulatedData.laguna_bay.currentHeight.toFixed(2)}m`;
-                lagunaBayStatusSpan.textContent = simulatedData.laguna_bay.status;
-            } else {
-                lagunaBayHeightSpan.textContent = 'N/A';
-                lagunaBayStatusSpan.textContent = 'N/A';
-            }
-            if (simulatedData.pasig_river) {
-                pasigRiverHeightSpan.textContent = `${simulatedData.pasig_river.currentHeight.toFixed(2)}m`;
-                pasigRiverStatusSpan.textContent = simulatedData.pasig_river.status;
-            } else {
-                pasigRiverHeightSpan.textContent = 'N/A';
-                pasigRiverStatusSpan.textContent = 'N/A';
-            }
-            if (simulatedData.marikina_river) {
-                marikinaRiverHeightSpan.textContent = `${simulatedData.marikina_river.currentHeight.toFixed(2)}m`;
-                marikinaRiverStatusSpan.textContent = simulatedData.marikina_river.status;
-            } else {
-                marikinaRiverHeightSpan.textContent = 'N/A';
-                marikinaRiverStatusSpan.textContent = 'N/A';
-            }
+            currentLocationEl.textContent = state.userLocation;
         }
 
-        /**
-         * Determines class suspension based on warning level and randomness.
-         * @param {string} warningLevel - The level of the warning (e.g., 'Red', 'Signal No. 3').
-         * @returns {object} Object indicating suspended levels.
-         */
-        function determineClassSuspension(warningLevel) {
-            let suspension = { kinder: false, elem: false, high: false, college: false, work: false, suspended: false };
-            const randomFactor = Math.random(); // 0 to 1
-
-            if (warningLevel.includes('Red')) {
-                suspension = { kinder: true, elem: true, high: true, college: true, work: true, suspended: true }; // Red usually means all
-                if (randomFactor < 0.05) { // Very small chance to not suspend college
-                    suspension.college = false;
-                }
-            } else if (warningLevel.includes('Orange')) {
-                suspension = { kinder: true, elem: true, high: true, college: false, work: false, suspended: true };
-                if (randomFactor < 0.2) { // 20% chance to suspend college
-                    suspension.college = true;
-                }
-                if (randomFactor < 0.1) { // 10% chance to suspend work
-                    suspension.work = true;
-                }
-            } else if (warningLevel.includes('Yellow')) {
-                suspension = { kinder: true, elem: true, high: false, college: false, work: false, suspended: true };
-                if (randomFactor < 0.15) { // 15% chance to suspend high school
-                    suspension.high = true;
-                }
-                if (randomFactor < 0.05) { // 5% chance to suspend college
-                    suspension.college = true;
-                }
-            } else if (warningLevel.includes('Signal No. 5')) {
-                suspension = { kinder: true, elem: true, high: true, college: true, work: true, suspended: true };
-            } else if (warningLevel.includes('Signal No. 4')) {
-                suspension = { kinder: true, elem: true, high: true, college: true, work: true, suspended: true };
-            } else if (warningLevel.includes('Signal No. 3')) {
-                suspension = { kinder: true, elem: true, high: true, college: true, work: true, suspended: true };
-                if (randomFactor < 0.1) { // 10% chance to not suspend college
-                    suspension.college = false;
-                }
-            } else if (warningLevel.includes('Signal No. 2')) {
-                suspension = { kinder: true, elem: true, high: true, college: false, work: false, suspended: true };
-                if (randomFactor < 0.3) { // 30% chance to suspend college
-                    suspension.college = true;
-                }
-                if (randomFactor < 0.2) { // 20% chance to suspend work
-                    suspension.work = true;
-                }
-            } else if (warningLevel.includes('Signal No. 1')) {
-                suspension = { kinder: true, elem: true, high: false, college: false, work: false, suspended: true };
-                if (randomFactor < 0.2) { // 20% chance to suspend high school
-                    suspension.high = true;
-                }
-                if (randomFactor < 0.1) { // 10% chance to suspend college
-                    suspension.college = true;
-                }
-            }
-            return suspension;
-        }
-
-
-        /**
-         * Runs one step of the simulation for an hour.
-         */
-        function runSimulationStep() {
-            currentSimulationHour++;
-            if (currentSimulationHour > totalSimulationHours) {
-                stopSimulation();
-                showCustomModal('Simulation Complete', `Simulation ran for ${totalSimulationHours} hours.`);
-                return;
-            }
-
-            showCustomModal('Simulating...', `Hour ${currentSimulationHour} of ${totalSimulationHours}`);
-
-            const nextHourPrecipInput = document.getElementById('nextHourPrecipitation');
-            const manualPrecip = parseFloat(nextHourPrecipInput.value);
-
-            simulatedLocations.forEach(loc => {
-                const data = simulatedData[loc.id];
-                if (!data || (loc.type !== 'city' && loc.type !== 'town' && loc.type !== 'region' && loc.type !== 'island_group' && loc.type !== 'province')) {
-                    return; // Only apply simulation to relevant location types
-                }
-
-                // Determine precipitation for this hour
-                let currentPrecipitation;
-                if (!isNaN(manualPrecip) && currentSimulationHour === 1) { // Only apply manual for the very next hour
-                    currentPrecipitation = manualPrecip;
-                    nextHourPrecipInput.value = ''; // Clear after use
-                } else {
-                    currentPrecipitation = basePrecipitationLevel + getRandomFloat(-precipitationRandomness, precipitationRandomness);
-                    currentPrecipitation = Math.max(0, currentPrecipitation); // Ensure non-negative
-
-                    // 10% chance to drop to 0 precipitation for an hour, unless base is very high
-                    if (Math.random() < 0.1 && basePrecipitationLevel < 20) {
-                        currentPrecipitation = 0;
-                    }
-                }
-
-                data.weather.precipitation = parseFloat(currentPrecipitation.toFixed(1));
-
-                // Adjust flood height based on precipitation, season, and elevation
-                let floodIncreaseFactor = 0.003; // Base increase per mm/hr - REDUCED FOR SLOWER FLOODING
-                if (currentSeason === 'wet') {
-                    floodIncreaseFactor *= 1.5; // Higher flood increase in wet season
-                }
-
-                // Lower elevation means higher flood risk
-                const elevationFactor = Math.max(0.1, 1 - (loc.seaLevelElevation / 10)); // Max 10m elevation for significant effect
-                floodIncreaseFactor *= elevationFactor;
-
-                const floodIncrease = data.weather.precipitation * floodIncreaseFactor * getRandomFloat(0.8, 1.2);
-                data.lastHourIncrease = parseFloat(floodIncrease.toFixed(2));
-                
-                // FLOOD RECESSION LOGIC:
-                if (data.weather.precipitation < 1) { // If very little or no rain
-                    const drainageFactor = 0.05; // Meters per hour drainage
-                    data.floodHeight = parseFloat((data.floodHeight - drainageFactor).toFixed(2));
-                }
-                data.floodHeight = parseFloat((data.floodHeight + floodIncrease).toFixed(2));
-                data.floodHeight = Math.max(0, data.floodHeight); // Ensure flood height doesn't go negative
-
-                // Update estimated flood height (simple projection)
-                data.estimatedFloodHeight = parseFloat((data.floodHeight + data.lastHourIncrease * 2).toFixed(2));
-
-                // Clear warnings for current hour, but maintain suspension status if already suspended
-                data.warnings = [];
-                // Suspension status remains true unless explicitly cleared by a 'clear weather' event
-                // or if conditions are consistently clear for a duration (not implemented for simplicity here)
-
-                // Warning Delay Logic: Only issue warnings after 1-2 hours of sustained conditions
-                if (data.weather.precipitation > 5 || data.floodHeight > 0.2) {
-                    data.warningDelayCounter++;
-                } else {
-                    data.warningDelayCounter = 0; // Reset if conditions improve
-                }
-
-                if (data.warningDelayCounter >= getRandomInt(1, 2)) { // After 1 or 2 hours
-                    // Heavy Rainfall Warnings
-                    if (data.weather.precipitation > 30) {
-                        data.warnings.push({ type: 'Heavy Rainfall Warning', level: 'Red Warning', area: loc.name, status: 'Active' });
-                        if (!data.classSuspension.suspended) { // Only apply if not already suspended
-                            data.classSuspension = determineClassSuspension('Red');
-                        }
-                    } else if (data.weather.precipitation > 15) {
-                        data.warnings.push({ type: 'Heavy Rainfall Warning', level: 'Orange Warning', area: loc.name, status: 'Active' });
-                        if (!data.classSuspension.suspended) {
-                            data.classSuspension = determineClassSuspension('Orange');
-                        }
-                    } else if (data.weather.precipitation > 5) {
-                        data.warnings.push({ type: 'Heavy Rainfall Warning', level: 'Yellow Warning', area: loc.name, status: 'Active' });
-                        if (!data.classSuspension.suspended) {
-                            data.classSuspension = determineClassSuspension('Yellow');
-                        }
-                    }
-
-                    // Flood Warnings (separate from rainfall warnings, but can coexist)
-                    if (data.floodHeight > 2.0) {
-                        data.warnings.push({ type: 'Flood Warning', level: 'Critical', area: loc.name, status: 'Active' });
-                        if (!data.classSuspension.suspended) {
-                            data.classSuspension = determineClassSuspension('Red'); // Treat critical flood like red warning for suspension
-                        }
-                    } else if (data.floodHeight > 1.0) {
-                        data.warnings.push({ type: 'Flood Warning', level: 'High', area: loc.name, status: 'Active' });
-                        if (!data.classSuspension.suspended) {
-                            data.classSuspension = determineClassSuspension('Orange'); // Treat high flood like orange warning
-                        }
-                    } else if (data.floodHeight > 0.0) { // Even low flood can be an advisory
-                        data.warnings.push({ type: 'Flood Advisory', level: 'Low', area: loc.name, status: 'Active' });
-                    }
-                }
-
-                // Simulate Tropical Cyclone Warnings (TCWS)
-                if (simulatedData.tropicalCyclones.length > 0) {
-                    const cyclone = simulatedData.tropicalCyclones[0]; // Assume one active cyclone for simplicity
-                    // Simplified logic: if cyclone is active, apply TCWS to Luzon and nearby
-                    if (loc.id === 'luzon' || loc.parent === 'luzon' || loc.id === 'palawan' || loc.parent === 'palawan' || loc.parent === 'cavite' || loc.parent === 'bulacan') {
-                        let signalLevel = 0;
-                        if (cyclone.strength === 'Super Typhoon') signalLevel = getRandomInt(4,5);
-                        else if (cyclone.strength === 'Typhoon') signalLevel = getRandomInt(3,4);
-                        else if (cyclone.strength === 'Tropical Storm') signalLevel = getRandomInt(1,2);
-                        else if (cyclone.strength === 'Tropical Depression') signalLevel = 1;
-
-                        if (signalLevel > 0) {
-                            data.warnings.push({
-                                type: 'Tropical Cyclone Warning',
-                                level: `Signal No. ${signalLevel}`,
-                                area: loc.name,
-                                status: 'Active'
-                            });
-                            // TCWS also influences class suspension, only if not already suspended by a higher level
-                            if (!data.classSuspension.suspended || (signalLevel >= 3 && !data.classSuspension.work)) { // Ensure work suspension is applied for higher signals
-                                const tcwsSuspension = determineClassSuspension(`Signal No. ${signalLevel}`);
-                                data.classSuspension.kinder = data.classSuspension.kinder || tcwsSuspension.kinder;
-                                data.classSuspension.elem = data.classSuspension.elem || tcwsSuspension.elem;
-                                data.classSuspension.high = data.classSuspension.high || tcwsSuspension.high;
-                                data.classSuspension.college = data.classSuspension.college || tcwsSuspension.college;
-                                data.classSuspension.work = data.classSuspension.work || tcwsSuspension.work;
-                                data.classSuspension.suspended = data.classSuspension.suspended || tcwsSuspension.suspended;
-                            }
-                        }
-                    }
-                }
-
-                // Update weather forecast based on precipitation
-                if (data.weather.precipitation > 30) data.weather.forecast = 'Torrential Rains';
-                else if (data.weather.precipitation > 15) data.weather.forecast = 'Heavy Rains';
-                else if (data.weather.precipitation > 5) data.weather.forecast = 'Moderate Rains';
-                else if (data.weather.precipitation > 0) data.weather.forecast = 'Light Rains';
-                else data.weather.forecast = 'Clear and Sunny';
-            });
-
-            // Update river/lake levels based on general precipitation
-            simulatedLocations.forEach(loc => {
-                if (loc.type === 'river' || loc.type === 'lake') {
-                    const increase = simulatedData.globalPrecipitation * getRandomFloat(0.05, 0.15); // Affects rivers/lakes
-                    simulatedData[loc.id].currentHeight = parseFloat((simulatedData[loc.id].currentHeight + increase).toFixed(2));
-                    simulatedData[loc.id].currentHeight = Math.max(loc.baseHeight, simulatedData[loc.id].currentHeight); // Don't go below base
-                    
-                    if (simulatedData[loc.id].currentHeight >= loc.criticalHeight) {
-                        simulatedData[loc.id].status = 'Critical';
-                    } else if (simulatedData[loc.id].currentHeight >= loc.warningHeight) {
-                        simulatedData[loc.id].status = 'Warning';
-                    } else {
-                        simulatedData[loc.id].status = 'Normal';
-                    }
-                }
-            });
-
-            // Update UI
-            if (currentSelectedLocation) {
-                updateAreaInfoPanel(currentSelectedLocation);
-            } else {
-                updateAreaInfoPanel(null);
-            }
-            redrawMapLayers();
-            updatePagasaPage();
-        }
-
-        /**
-         * Starts the simulation.
-         */
+        // --- Simulation Core Logic ---
         function startSimulation() {
-            currentSimulationHour = 0;
-            totalSimulationHours = parseInt(document.getElementById('simulationHours').value);
-            basePrecipitationLevel = parseFloat(document.getElementById('precipitationLevel').value);
-            precipitationRandomness = parseFloat(document.getElementById('precipitationRandomness').value);
-            currentSeason = document.getElementById('seasonSelect').value;
+            if (state.isSimulationRunning) {
+                return;
+            }
+            state.isSimulationRunning = true;
+            startSimulationBtn.textContent = 'Stop Simulation';
+            startSimulationBtn.classList.remove('btn-green');
+            startSimulationBtn.classList.add('btn-red');
+            state.simulationInterval = setInterval(stepSimulation, 1000);
+            showCustomModal('Simulation Started', 'The simulation is now running. Observe the map and controls for changes.');
+        }
 
-            document.getElementById('startSimulationBtn').classList.add('hidden');
-            document.getElementById('nextHourBtn').classList.remove('hidden');
-            document.getElementById('resetSimulationBtn').classList.remove('hidden');
+        function stopSimulation() {
+            if (!state.isSimulationRunning) {
+                return;
+            }
+            state.isSimulationRunning = false;
+            startSimulationBtn.textContent = 'Start Simulation';
+            startSimulationBtn.classList.remove('btn-red');
+            startSimulationBtn.classList.add('btn-green');
+            clearInterval(state.simulationInterval);
+            showCustomModal('Simulation Paused', 'The simulation has been paused.');
+        }
 
-            // Initial state reset for simulation
-            simulatedLocations.forEach(loc => {
-                if (initialSimulatedData[loc.id]) { // Use initial data for reset
-                    simulatedData[loc.id] = JSON.parse(JSON.stringify(initialSimulatedData[loc.id]));
+        function generateRaindrop() {
+            const drop = document.createElement('div');
+            drop.classList.add('drop');
+            const left = Math.random() * 100;
+            const duration = 1 + Math.random() * 0.5;
+            const opacity = 0.5 + Math.random() * 0.5;
+            drop.style.left = `${left}%`;
+            drop.style.animationDuration = `${duration}s`;
+            drop.style.opacity = opacity;
+            rainContainer.appendChild(drop);
+
+            setTimeout(() => {
+                drop.remove();
+            }, duration * 1000);
+        }
+
+        function renderRain() {
+            const dropsPerSecond = state.precipitationRate / 2;
+            const dropInterval = 1000 / dropsPerSecond;
+            clearInterval(window.rainInterval);
+            if (state.precipitationRate > 0) {
+                window.rainInterval = setInterval(generateRaindrop, dropInterval);
+            }
+        }
+
+        function checkPAGASAWarning() {
+            let warningLevel = 'Normal';
+            let warningClass = '';
+            let message = 'No active rainfall warnings.';
+
+            if (state.precipitationRate > 60) {
+                warningLevel = 'Red Warning';
+                warningClass = 'red';
+                message = 'Serious flooding is expected in low-lying areas. EVACUATION is highly recommended.';
+            } else if (state.precipitationRate > 40) {
+                warningLevel = 'Orange Warning';
+                warningClass = 'orange';
+                message = 'Flooding is threatening low-lying areas. It is advisable to be alert for possible evacuation.';
+            } else if (state.precipitationRate > 20) {
+                warningLevel = 'Yellow Warning';
+                warningClass = 'yellow';
+                message = 'Flooding is possible in low-lying areas. Stay alert for updates.';
+            }
+            
+            pagasaWarningsLog.innerHTML = `<div class="warning-box ${warningClass}">
+                <p class="warning-title">${warningLevel}</p>
+                <p class="warning-description">${message}</p>
+            </div>`;
+        }
+
+        function stepSimulation() {
+            const precipitation = state.precipitationRate / 1000;
+            state.currentFloodHeight += precipitation;
+            state.currentFloodHeight = Math.max(0, state.currentFloodHeight - 0.001);
+
+            currentFloodHeightEl.textContent = state.currentFloodHeight.toFixed(2);
+            currentPrecipitationRateEl.textContent = state.precipitationRate;
+            
+            simulatedRoadsGeoJSON.features.forEach(feature => {
+                if (feature.properties.location === state.userLocation) {
+                    feature.properties.flood_level = state.currentFloodHeight;
                 }
             });
-            simulatedData.tropicalCyclones = []; // Clear cyclones at start of new simulation
+            renderRoads();
 
-            // Special event handling
-            const eventType = document.getElementById('simulateEvent').value;
-            if (eventType === 'heavyRain') {
-                basePrecipitationLevel = 35; // Adjusted to make Red Warning more likely
-                precipitationRandomness = 5;
-            } else if (eventType === 'cyclone') {
-                simulatedData.tropicalCyclones = [{ name: 'Simulated Cyclone', strength: 'Typhoon' }];
-                basePrecipitationLevel = 10; // Some rain with cyclone
-                precipitationRandomness = 8;
-            } else if (eventType === 'clear') {
-                basePrecipitationLevel = 0;
-                precipitationRandomness = 0;
-                // Explicitly clear all suspensions
-                simulatedLocations.forEach(loc => {
-                    if (simulatedData[loc.id] && simulatedData[loc.id].classSuspension) {
-                        simulatedData[loc.id].classSuspension = { kinder: false, elem: false, high: false, college: false, work: false, suspended: false };
+            state.simulationTime.setMinutes(state.simulationTime.getMinutes() + 10);
+            updateClockDisplay();
+
+            checkWarningStatus();
+            checkPAGASAWarning();
+        }
+
+        function checkWarningStatus() {
+            if (state.currentFloodHeight >= state.evacuationThreshold) {
+                if (!state.isEvacuationWarningActive) {
+                    showWarning('High Flood Level Alert', `The flood height has reached ${state.currentFloodHeight.toFixed(2)}m. Evacuate ${state.userLocation} now!`, true);
+                    state.isEvacuationWarningActive = true;
+                    if (alarmToggle.checked) {
+                        alarmSound.play();
                     }
-                });
-            }
-
-            runSimulationStep(); // Run the first hour
-        }
-
-        /**
-         * Resets the simulation to its initial state.
-         */
-        function resetSimulation() {
-            currentSimulationHour = 0;
-            simulatedData = JSON.parse(JSON.stringify(initialSimulatedData)); // Restore from deep copy
-
-            // Reset UI elements
-            document.getElementById('precipitationLevel').value = 0;
-            document.getElementById('nextHourPrecipitation').value = '';
-            document.getElementById('precipitationRandomness').value = 10;
-            document.getElementById('simulationHours').value = 6;
-            document.getElementById('seasonSelect').value = 'dry';
-            document.getElementById('simulateEvent').value = 'normal'; // Reset event type
-
-            document.getElementById('startSimulationBtn').classList.remove('hidden');
-            document.getElementById('nextHourBtn').classList.add('hidden');
-            document.getElementById('resetSimulationBtn').classList.add('hidden');
-
-            updatePagasaPage();
-            updateAreaInfoPanel(null);
-            redrawMapLayers();
-            showCustomModal('Simulation Reset', 'All simulation data has been reset.');
-        }
-
-        /**
-         * Toggles dark mode on/off.
-         */
-        function toggleDarkMode() {
-            isDarkMode = !isDarkMode;
-            document.body.classList.toggle('dark', isDarkMode);
-            const icon = document.getElementById('darkModeIcon');
-            if (isDarkMode) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
+                }
             } else {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
+                if (state.isEvacuationWarningActive) {
+                    hideWarning();
+                    state.isEvacuationWarningActive = false;
+                }
             }
-            // Re-apply map colors to ensure they adapt to dark mode text shadow
-            redrawMapLayers();
         }
 
+        function showWarning(title, message, isEvacuation = false) {
+            const timestamp = state.simulationTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('p-2', 'rounded-md', 'text-sm');
+            logEntry.innerHTML = `<span class="font-bold text-red-500">[${timestamp}] ${title}:</span> ${message}`;
+            warningsLogEl.prepend(logEntry);
 
-        // --- Main execution block (after DOM is loaded) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Elements (now safely accessible) ---
-            const homeBtn = document.getElementById('homeBtn');
-            const pagasaWarningsBtn = document.getElementById('pagasaWarningsBtn');
-            const pagasaPage = document.getElementById('pagasaPage');
-            const closePagasaPageBtn = document.getElementById('closePagasaPageBtn');
-            const checkLocationBtn = document.getElementById('checkLocationBtn');
-            const askLLMBtn = document.getElementById('askLLMBtn'); // New button for LLM
-            const toggleFloodHeightBtn = document.getElementById('toggleFloodHeight');
-            const togglePrecipitationBtn = document.getElementById('togglePrecipitation');
-            const toggleRainfallWarningsBtn = document.getElementById('toggleRainfallWarnings'); // New
-            const toggleTCWSBtn = document.getElementById('toggleTCWS'); // New
-            const toggleClassSuspensionBtn = document.getElementById('toggleClassSuspension'); // New button
-            const secretTestButton = document.getElementById('secretTestButton');
-            const testPanel = document.getElementById('testPanel');
-            const closeTestPanelBtn = document.getElementById('closeTestPanelBtn');
-            const simulateEventSelect = document.getElementById('simulateEvent');
-            const precipitationLevelInput = document.getElementById('precipitationLevel');
-            const nextHourPrecipitationInput = document.getElementById('nextHourPrecipitation'); // New
-            const precipitationRandomnessInput = document.getElementById('precipitationRandomness'); // New
-            const simulationHoursInput = document.getElementById('simulationHours'); // New
-            const seasonSelect = document.getElementById('seasonSelect'); // New
-            const startSimulationBtn = document.getElementById('startSimulationBtn'); // Renamed from apply
-            const nextHourBtn = document.getElementById('nextHourBtn'); // New
-            const resetSimulationBtn = document.getElementById('resetSimulationBtn'); // New
-            const backToPHMapBtn = document.getElementById('backToPHMapBtn'); // New button
-            const backToMetroManilaBtn = document.getElementById('backToMetroManilaBtn'); // New button
+            if (isEvacuation) {
+                evacuationWarningEl.style.display = 'block';
+            }
+        }
+
+        function hideWarning() {
+            evacuationWarningEl.style.display = 'none';
+            alarmSound.pause();
+            alarmSound.currentTime = 0;
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+            state.currentFloodHeight = 0;
+            state.precipitationRate = 0;
+            state.isEvacuationWarningActive = false;
+            state.simulationTime = new Date();
+            
+            precipitationRateInput.value = 0;
+            currentFloodHeightEl.textContent = state.currentFloodHeight.toFixed(2);
+            precipitationValueEl.textContent = state.precipitationRate;
+            warningsLogEl.innerHTML = '';
+            hideWarning();
+            
+            simulatedRoadsGeoJSON.features.forEach(feature => {
+                feature.properties.flood_level = 0.0;
+            });
+            renderRoads();
+            
+            updateClockDisplay();
+            renderRain();
+            showCustomModal('Simulation Reset', 'The simulation has been reset to its initial state.');
+        }
+
+        function updateClockDisplay() {
+            const date = state.simulationTime;
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            currentTimeEl.textContent = date.toLocaleDateString('en-US', options);
+            currentSimulationTimeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // --- Map Layer Toggles ---
+        function toggleLayer(layer, geojson, styleFunction) {
+            if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+            } else {
+                layer = L.geoJSON(geojson, { style: styleFunction }).addTo(map);
+            }
+            return layer;
+        }
+
+        // --- Event Listeners and Initialization ---
+        function initializeApp() {
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
             const sidebar = document.getElementById('sidebar');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            const menuToggleBtn = document.getElementById('menuToggleBtn');
-            const modalCloseBtn = document.getElementById('modalCloseBtn'); // Added for global modal close
-            const darkModeToggle = document.getElementById('darkModeToggle'); // Dark mode toggle button
+            const sidebarOverlay = document.createElement('div');
 
+            sidebarOverlay.classList.add('fixed', 'inset-0', 'bg-black', 'bg-opacity-50', 'z-10', 'lg:hidden');
+            sidebarOverlay.style.display = 'none';
+            document.body.appendChild(sidebarOverlay);
 
-            // Initial update of PAGASA page content (now that DOM is ready)
-            updatePagasaPage();
-
-            // --- Event Listeners ---
-
-            homeBtn.addEventListener('click', () => {
-                currentMapZoomLevel = 'national';
-                currentParentLocationId = null; // Reset parent
-                backToPHMapBtn.classList.add('hidden'); // Hide back button
-                backToMetroManilaBtn.classList.add('hidden'); // Hide back to MM button
-                renderSvgMap(); // Re-render SVG map to national view
-                testPanel.style.display = 'none'; // Hide test panel if open
-                pagasaPage.style.display = 'none';
-                // Close sidebar if open on mobile
-                sidebar.classList.remove('open');
-                sidebarOverlay.style.display = 'none';
-                redrawMapLayers(); // Ensure map colors are updated
-                updateAreaInfoPanel(null); // Clear info panel
-                if (selectedRegionPolygon) {
-                    selectedRegionPolygon.classList.remove('selected');
-                    selectedRegionPolygon = null;
-                }
+            // Dark mode toggle
+            darkModeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
             });
 
-            pagasaWarningsBtn.addEventListener('click', () => {
-                pagasaPage.style.display = 'block';
-                testPanel.style.display = 'none'; // Hide test panel if open
-                updatePagasaPage();
-                // Close sidebar if open on mobile
-                sidebar.classList.remove('open');
-                sidebarOverlay.style.display = 'none';
-                redrawMapLayers(); // Ensure map colors are updated
-            });
-
-            closePagasaPageBtn.addEventListener('click', () => {
-                pagasaPage.style.display = 'none';
-            });
-
-            // New button event listener for "Back to National Map"
-            backToPHMapBtn.addEventListener('click', () => {
-                currentMapZoomLevel = 'national';
-                currentParentLocationId = null;
-                renderSvgMap();
-                updateAreaInfoPanel(null);
-                if (selectedRegionPolygon) {
-                    selectedRegionPolygon.classList.remove('selected');
-                    selectedRegionPolygon = null;
-                }
-            });
-
-            // New button event listener for "Back to Metro Manila"
-            backToMetroManilaBtn.addEventListener('click', () => {
-                currentMapZoomLevel = 'metro_manila_cities';
-                currentParentLocationId = 'national';
-                renderSvgMap();
-                updateAreaInfoPanel(null);
-                if (selectedRegionPolygon) {
-                    selectedRegionPolygon.classList.remove('selected');
-                    selectedRegionPolygon = null;
-                }
-            });
-
-
-            // The checkLocationBtn logic needs to be adapted for SVG map.
-            // It will just select the "Metro Manila" region if available, or Luzon otherwise.
-            checkLocationBtn.addEventListener('click', () => {
-                showCustomModal('Getting Location', 'Simulating location check...');
-                setTimeout(() => {
-                    closeCustomModal();
-                    const metroManilaLocation = simulatedLocations.find(loc => loc.id === 'manila_region');
-                    if (metroManilaLocation) {
-                        // Simulate clicking Metro Manila to zoom in
-                        currentMapZoomLevel = 'metro_manila_cities';
-                        currentParentLocationId = 'national';
-                        renderSvgMap(); // Render Metro Manila cities
-                        const metroManilaPath = document.getElementById(metroManilaLocation.svgPathId);
-                        if (metroManilaPath) {
-                             // Remove 'selected' class from previously selected polygon
-                            if (selectedRegionPolygon) {
-                                selectedRegionPolygon.classList.remove('selected');
-                            }
-                            metroManilaPath.classList.add('selected');
-                            selectedRegionPolygon = metroManilaPath;
-                            updateAreaInfoPanel(metroManilaLocation);
-                            showCustomModal('Location Found', `Displaying information for ${metroManilaLocation.name}.`);
-                        }
-                    } else {
-                        // Fallback to Luzon if Metro Manila path isn't found
-                        const luzonLocation = simulatedLocations.find(loc => loc.id === 'luzon');
-                        if (luzonLocation) {
-                            currentMapZoomLevel = 'national';
-                            currentParentLocationId = null;
-                            renderSvgMap(); // Render national map
-                            const luzonPath = document.getElementById(luzonLocation.svgPathId);
-                            if (selectedRegionPolygon) {
-                                selectedRegionPolygon.classList.remove('selected');
-                            }
-                            luzonPath.classList.add('selected');
-                            selectedRegionPolygon = luzonPath;
-                            updateAreaInfoPanel(luzonLocation);
-                            showCustomModal('Location Found', `Displaying information for ${luzonLocation.name}.`);
-                        } else {
-                            updateAreaInfoPanel(null);
-                            showCustomModal('Location Found', 'No specific simulated data for your exact location, showing general map.');
-                        }
-                    }
-                    redrawMapLayers(); // Redraw layers based on new location/zoom
-                }, 500); // Small delay for simulation effect
-            });
-
-            toggleFloodHeightBtn.addEventListener('click', () => {
-                toggleFloodHeightBtn.classList.toggle('bg-blue-600');
-                toggleFloodHeightBtn.classList.toggle('bg-gray-200');
-                toggleFloodHeightBtn.classList.toggle('text-white');
-                toggleFloodHeightBtn.classList.toggle('text-gray-800');
-                toggleFloodHeightBtn.textContent = toggleFloodHeightBtn.classList.contains('bg-blue-600') ? 'Hide Flood Height' : 'Toggle Flood Height';
-                redrawMapLayers();
-            });
-
-            toggleClassSuspensionBtn.addEventListener('click', () => {
-                toggleClassSuspensionBtn.classList.toggle('bg-blue-600');
-                toggleClassSuspensionBtn.classList.toggle('bg-gray-200');
-                toggleClassSuspensionBtn.classList.toggle('text-white');
-                toggleClassSuspensionBtn.classList.toggle('text-gray-800');
-                toggleClassSuspensionBtn.textContent = toggleClassSuspensionBtn.classList.contains('bg-blue-600') ? 'Hide Class Suspension' : 'Toggle Class Suspension';
-                redrawMapLayers();
-            });
-
-            togglePrecipitationBtn.addEventListener('click', () => {
-                togglePrecipitationBtn.classList.toggle('bg-blue-600');
-                togglePrecipitationBtn.classList.toggle('bg-gray-200');
-                togglePrecipitationBtn.classList.toggle('text-white');
-                togglePrecipitationBtn.classList.toggle('text-gray-800');
-                togglePrecipitationBtn.textContent = togglePrecipitationBtn.classList.contains('bg-blue-600') ? 'Hide Precipitation' : 'Toggle Precipitation';
-                redrawMapLayers();
-            });
-
-            toggleRainfallWarningsBtn.addEventListener('click', () => {
-                toggleRainfallWarningsBtn.classList.toggle('bg-blue-600');
-                toggleRainfallWarningsBtn.classList.toggle('bg-gray-200');
-                toggleRainfallWarningsBtn.classList.toggle('text-white');
-                toggleRainfallWarningsBtn.classList.toggle('text-gray-800');
-                toggleRainfallWarningsBtn.textContent = toggleRainfallWarningsBtn.classList.contains('bg-blue-600') ? 'Hide Rainfall Warnings' : 'Toggle Rainfall Warnings';
-                redrawMapLayers();
-            });
-
-            toggleTCWSBtn.addEventListener('click', () => {
-                toggleTCWSBtn.classList.toggle('bg-blue-600');
-                toggleTCWSBtn.classList.toggle('bg-gray-200');
-                toggleTCWSBtn.classList.toggle('text-white');
-                toggleTCWSBtn.classList.toggle('text-gray-800');
-                toggleTCWSBtn.textContent = toggleTCWSBtn.classList.contains('bg-blue-600') ? 'Hide TCWS' : 'Toggle TCWS';
-                redrawMapLayers();
-            });
-
-            secretTestButton.addEventListener('click', () => {
-                testPanel.style.display = testPanel.style.display === 'block' ? 'none' : 'block';
-                pagasaPage.style.display = 'none'; // Ensure PAGASA page is hidden
-                // Close sidebar if open on mobile
-                sidebar.classList.remove('open');
-                sidebarOverlay.style.display = 'none';
-                redrawMapLayers(); // Ensure map colors are updated
-            });
-
-            closeTestPanelBtn.addEventListener('click', () => {
-                testPanel.style.display = 'none';
-            });
-
-            startSimulationBtn.addEventListener('click', startSimulation); // Start simulation
-            nextHourBtn.addEventListener('click', runSimulationStep); // Advance simulation by hour
-            resetSimulationBtn.addEventListener('click', resetSimulation); // Reset simulation
-
-            askLLMBtn.addEventListener('click', handleAskLLMClick); // Attach event listener here
-
-            modalCloseBtn.addEventListener('click', closeCustomModal);
-
-            darkModeToggle.addEventListener('click', toggleDarkMode); // Dark mode toggle
-
-            // --- Mobile Sidebar Toggle ---
+            // Mobile sidebar toggle
             menuToggleBtn.addEventListener('click', () => {
                 sidebar.classList.toggle('open');
-                // Toggle overlay display based on sidebar's 'open' class
-                if (sidebar.classList.contains('open')) {
-                    sidebarOverlay.style.display = 'block';
-                } else {
-                    sidebarOverlay.style.display = 'none';
-                }
+                sidebarOverlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
             });
-
             sidebarOverlay.addEventListener('click', () => {
                 sidebar.classList.remove('open');
                 sidebarOverlay.style.display = 'none';
             });
+            
+            // Right panel toggle
+            settingsToggleBtn.addEventListener('click', () => {
+                rightPanel.classList.toggle('open');
+            });
 
-            // Initial map rendering on DOMContentLoaded
-            showCustomModal('Loading Map', 'Please wait while the map initializes...');
-            setTimeout(() => {
-                renderSvgMap(); // Initial render of the national map
-                closeCustomModal(); // Close loading modal once map is initialized
-            }, 1000); // 1000ms = 1 second delay
-        });
+            // Simulation controls
+            startSimulationBtn.addEventListener('click', () => {
+                if (state.isSimulationRunning) {
+                    stopSimulation();
+                } else {
+                    startSimulation();
+                }
+            });
+            resetSimulationBtn.addEventListener('click', resetSimulation);
 
+            precipitationRateInput.addEventListener('input', (e) => {
+                state.precipitationRate = parseInt(e.target.value);
+                precipitationValueEl.textContent = state.precipitationRate;
+                renderRain();
+            });
+
+            evacuationThresholdInput.addEventListener('change', (e) => {
+                state.evacuationThreshold = parseFloat(e.target.value);
+            });
+            
+            userLocationInput.addEventListener('change', (e) => {
+                state.userLocation = e.target.value;
+                updateMapLocation();
+                simulatedRoadsGeoJSON.features.forEach(feature => feature.properties.flood_level = 0.0);
+                renderRoads();
+            });
+
+            // Map Layer Toggles
+            toggleRainfallWarningsBtn.addEventListener('click', () => {
+                if (!rainfallWarningLayer || !map.hasLayer(rainfallWarningLayer)) {
+                     rainfallWarningLayer = L.geoJSON(simulatedWarningAreas.rainfall, {
+                        style: { color: 'blue', weight: 2, opacity: 0.5, fillOpacity: 0.2 }
+                    }).addTo(map);
+                } else {
+                    map.removeLayer(rainfallWarningLayer);
+                }
+            });
+
+            toggleTcwsBtn.addEventListener('click', () => {
+                if (!tcwsLayer || !map.hasLayer(tcwsLayer)) {
+                    tcwsLayer = L.geoJSON(simulatedWarningAreas.tcws, {
+                        style: { color: 'red', weight: 2, opacity: 0.5, fillOpacity: 0.2 }
+                    }).addTo(map);
+                } else {
+                    map.removeLayer(tcwsLayer);
+                }
+            });
+            
+            toggleClassSuspensionBtn.addEventListener('click', () => {
+                if (!classSuspensionLayer || !map.hasLayer(classSuspensionLayer)) {
+                    classSuspensionLayer = L.geoJSON(simulatedWarningAreas.classSuspension, {
+                        style: { color: 'purple', weight: 2, opacity: 0.5, fillOpacity: 0.2 }
+                    }).addTo(map);
+                } else {
+                    map.removeLayer(classSuspensionLayer);
+                }
+            });
+
+            modalCloseBtn.addEventListener('click', closeCustomModal);
+        
+            initializeMap();
+            updateClockDisplay();
+            showCustomModal('Welcome!', 'Use the new controls on the right to start the automatic flood simulation. The map will now update every second.');
+        }
+        
+        // This function dynamically loads the Leaflet script and then calls initializeApp
+        function loadLeafletAndStartApp() {
+            const script = document.createElement('script');
+            script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+            script.integrity = "sha256-20nqc1T6l4l2H2r63+s/C2l1H8e4w9/a+u83oT8eP3s=";
+            script.crossOrigin = "";
+            script.onload = initializeApp;
+            document.head.appendChild(script);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadLeafletAndStartApp);
     </script>
 </body>
 </html>
