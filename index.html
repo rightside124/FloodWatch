@@ -22,7 +22,6 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevent body scroll */
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -57,6 +56,8 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+            /* Fix for scrolling: set a height relative to the viewport minus the header height */
+            height: calc(100vh - 64px); 
         }
         #map-container {
             flex: 1;
@@ -159,14 +160,6 @@
         .warning-box.yellow { border-color: #eab308; }
         .warning-box.orange { border-color: #f97316; }
         .warning-box.red { border-color: #ef4444; }
-        .warning-title {
-            font-weight: bold;
-            color: #f8fafc;
-        }
-        .warning-description {
-            font-size: 0.875rem;
-            color: #cbd5e1;
-        }
         .forecast-box {
             background-color: #2a3847;
             border-radius: 0.5rem;
@@ -262,6 +255,25 @@
             margin-right: 0.5rem;
             border: 1px solid #4a5568;
         }
+        #precipitation-graph {
+            background-color: #3e4a57;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            border: 1px solid #4a5568;
+        }
+        .notification-bar {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: #10b981; /* Green-500 */
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            z-index: 50;
+        }
     </style>
 </head>
 <body>
@@ -310,15 +322,32 @@
                     <div class="flex justify-between items-center mb-4">
                         <div class="text-center">
                             <p class="text-xl font-bold">Next 3 hrs</p>
-                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-3hr">0mm</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-3hr-rainfall">0mm</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xl font-bold">Next 6 hrs</p>
-                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-6hr">0mm</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-6hr-rainfall">0mm</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xl font-bold">Next 12 hrs</p>
-                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-12hr">0mm</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-12hr-rainfall">0mm</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="info-box">
+                    <h3 class="text-center">Flood Forecast</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-center">
+                            <p class="text-xl font-bold">Next 3 hrs</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-3hr-flood">0m</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xl font-bold">Next 6 hrs</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-6hr-flood">0m</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xl font-bold">Next 12 hrs</p>
+                            <p class="text-3xl font-bold text-[#0d9488]" id="forecast-12hr-flood">0m</p>
                         </div>
                     </div>
                 </div>
@@ -348,7 +377,7 @@
                     <div class="input-group">
                         <label for="session-type">Session Type:</label>
                         <select id="session-type" class="w-full rounded-md p-2">
-                            <option value="auto">Auto Simulation</option>
+                            <option value="normal">Normal Simulation</option>
                             <option value="rain">Rain Event</option>
                             <option value="thunderstorm">Thunderstorm</option>
                             <option value="tropical-cyclone">Tropical Cyclone</option>
@@ -362,26 +391,45 @@
                         <label for="random-precipitation" class="text-white">Random Precipitation:</label>
                         <input type="checkbox" id="random-precipitation" class="form-checkbox h-5 w-5 text-teal-600 rounded-full" checked>
                     </div>
+                    <canvas id="precipitation-graph" width="300" height="100"></canvas>
                     <div class="flex justify-center mt-4">
                         <button id="start-simulation-btn" class="button w-full">Start Simulation</button>
+                    </div>
+                    <div class="flex justify-center mt-2">
+                        <button id="run-instant-btn" class="button w-full">Run Instant Simulation</button>
                     </div>
                     <div class="flex justify-center mt-2">
                         <button id="reset-simulation-btn" class="button btn-red w-full">Reset Simulation</button>
                     </div>
                 </div>
+
+                <div class="info-box">
+                    <h3 class="text-center">Alarm Settings</h3>
+                    <div class="input-group">
+                        <label for="alarm-height">Alarm Activation Height: <span id="alarm-height-value">1.0</span> m</label>
+                        <input type="range" id="alarm-height" min="0.1" max="2.0" step="0.1" value="1.0">
+                    </div>
+                    <div class="flex justify-center mt-4">
+                        <button id="test-alarm-btn" class="button w-full">Test Alarm</button>
+                    </div>
+                    <div class="flex justify-center mt-2">
+                        <button id="test-alarm-warning-btn" class="button w-full">Test Alarm & Warning</button>
+                    </div>
+                </div>
                 
                 <div class="info-box">
-                    <h3 class="text-center">Map & Location Settings</h3>
-                    <div id="location-select-container" class="input-group">
-                        <label for="user-location-select">Your Location:</label>
-                        <select id="user-location-select" class="w-full rounded-md p-2"></select>
-                    </div>
+                    <h3 class="text-center">Graphics & Location Settings</h3>
                     <div id="road-selection-container" class="input-group">
                         <label for="road-detail-select">Road Details:</label>
                         <select id="road-detail-select" class="w-full rounded-md p-2">
                             <option value="all">Load All Roads</option>
                             <option value="highways">Load Highways Only</option>
+                            <option value="none">Remove All Roads</option>
                         </select>
+                    </div>
+                    <div id="location-select-container" class="input-group">
+                        <label for="user-location-select">Your Location:</label>
+                        <select id="user-location-select" class="w-full rounded-md p-2"></select>
                     </div>
                 </div>
             </div>
@@ -428,28 +476,34 @@
             simulationInterval: null,
             simulationTime: 0, // in seconds
             simulationDuration: 60 * 60, // default 1 hour in seconds
-            sessionType: 'auto',
-            autoMode: true,
+            sessionType: 'normal',
             userLocation: 'Entire Metro Manila',
+            alarmHeight: 1.0,
             forecast: {
                 temp: 28,
                 humidity: 75,
+                rainfall: { h3: 0, h6: 0, h12: 0 },
                 flood: { h3: 0, h6: 0, h12: 0 },
                 advisories: { rainfall: 'None', tcws: 'None' }
             },
             lastRainfallWarning: 'None',
             lastTcwsWarning: 'None',
             alertTriggered: false,
+            // Tone.js for sound effects
             alertSound: new Tone.MembraneSynth().toDestination(),
+            // Interval for repeating alarm sound
+            alarmInterval: null,
             mapLayers: {
                 rainfall: new ol.layer.Vector({ source: new ol.source.Vector() }),
                 tcws: new ol.layer.Vector({ source: new ol.source.Vector() }),
                 locationMarker: new ol.layer.Vector({ source: new ol.source.Vector() })
-            }
+            },
+            precipitationHistory: []
         };
         
         // --- DOM Elements ---
         const startSimulationBtn = document.getElementById('start-simulation-btn');
+        const runInstantBtn = document.getElementById('run-instant-btn');
         const resetSimulationBtn = document.getElementById('reset-simulation-btn');
         const currentFloodHeightEl = document.getElementById('current-flood-height');
         const totalPrecipitationEl = document.getElementById('total-precipitation');
@@ -463,9 +517,12 @@
         const randomPrecipitationCheckbox = document.getElementById('random-precipitation');
         const currentTempEl = document.getElementById('current-temp');
         const currentHumidityEl = document.getElementById('current-humidity');
-        const forecast3hrEl = document.getElementById('forecast-3hr');
-        const forecast6hrEl = document.getElementById('forecast-6hr');
-        const forecast12hrEl = document.getElementById('forecast-12hr');
+        const forecast3hrRainfallEl = document.getElementById('forecast-3hr-rainfall');
+        const forecast6hrRainfallEl = document.getElementById('forecast-6hr-rainfall');
+        const forecast12hrRainfallEl = document.getElementById('forecast-12hr-rainfall');
+        const forecast3hrFloodEl = document.getElementById('forecast-3hr-flood');
+        const forecast6hrFloodEl = document.getElementById('forecast-6hr-flood');
+        const forecast12hrFloodEl = document.getElementById('forecast-12hr-flood');
         const pagasaAdvisoriesEl = document.getElementById('pagasa-advisories');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -477,54 +534,115 @@
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
-
+        const precipitationGraph = document.getElementById('precipitation-graph');
+        const graphCtx = precipitationGraph.getContext('2d');
+        const alarmHeightInput = document.getElementById('alarm-height');
+        const alarmHeightValueEl = document.getElementById('alarm-height-value');
+        const testAlarmBtn = document.getElementById('test-alarm-btn');
+        const testAlarmWarningBtn = document.getElementById('test-alarm-warning-btn');
+        
         // --- UI Functions ---
-        function showCustomModal(title, message, showCloseButton = true) {
+        function showCustomModal(title, message, options = {}) {
+            const { showCloseButton = true, isWelcome = false } = options;
             modalTitle.textContent = title;
             modalMessage.textContent = message;
             customModalOverlay.style.display = 'flex';
-            if (showCloseButton) {
-                modalCloseBtn.style.display = 'block';
-            } else {
-                modalCloseBtn.style.display = 'none';
-            }
+            const oldButtons = customModal.querySelectorAll('button');
+            oldButtons.forEach(btn => btn.remove());
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = "OK";
+            closeBtn.className = "button mt-4";
+            closeBtn.onclick = () => {
+                closeCustomModal();
+                if (isWelcome) {
+                    switchTab('settings');
+                }
+            };
+            customModal.appendChild(closeBtn);
         }
 
         function closeCustomModal() {
             customModalOverlay.style.display = 'none';
+            // Stop the looping alarm sound
+            if (state.alarmInterval) {
+                clearInterval(state.alarmInterval);
+                state.alarmInterval = null;
+            }
+        }
+
+        function showTemporaryNotification(message) {
+            const existingNotification = document.querySelector('.notification-bar');
+            if (existingNotification) existingNotification.remove();
+
+            const notification = document.createElement('div');
+            notification.className = 'notification-bar';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            notification.addEventListener('click', () => notification.remove());
+
+            setTimeout(() => {
+                if (notification && notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000); // Remove after 5 seconds
         }
 
         function showEvacuationModal() {
-            modalTitle.textContent = "EVACUATION ALERT!";
-            modalMessage.textContent = "Immediate evacuation is advised due to severe flooding. Do you want to contact emergency services?";
-            customModalOverlay.style.display = 'flex';
-            modalCloseBtn.style.display = 'none';
+            // Stop the simulation and silence any sound effects
+            stopSimulation();
             
-            const emergencyButton = document.createElement('button');
-            emergencyButton.textContent = "Contact Emergency Services";
-            emergencyButton.className = "button btn-red mt-4 mr-2";
-            emergencyButton.onclick = () => {
-                showCallingScreen();
-            };
+            // Start the looping alarm sound
+            if (!state.alarmInterval) {
+                state.alarmInterval = setInterval(() => {
+                    state.alertSound.triggerAttackRelease("C4", "8n");
+                }, 1000); // Repeat every 1 second
+            }
 
-            const cancelButton = document.createElement('button');
-            cancelButton.textContent = "Dismiss";
-            cancelButton.className = "button mt-4";
-            cancelButton.onclick = () => {
+            modalTitle.textContent = "EVACUATION ALERT!";
+            modalMessage.textContent = "Immediate evacuation is advised due to severe flooding.";
+            customModalOverlay.style.display = 'flex';
+            
+            const oldButtons = customModal.querySelectorAll('button');
+            oldButtons.forEach(btn => btn.remove());
+            
+            const dismissButton = document.createElement('button');
+            dismissButton.textContent = "Dismiss";
+            dismissButton.className = "button btn-red mt-4";
+            dismissButton.onclick = () => {
                 closeCustomModal();
             };
+            customModal.appendChild(dismissButton);
 
-            customModal.appendChild(emergencyButton);
-            customModal.appendChild(cancelButton);
+            const callButton = document.createElement('button');
+            callButton.textContent = "Call Emergency Services";
+            callButton.className = "button mt-4 ml-2";
+            callButton.onclick = () => {
+                showEmergencyCallModal();
+            };
+            customModal.appendChild(callButton);
         }
 
-        function showCallingScreen() {
-            modalTitle.textContent = "Calling 911...";
-            modalMessage.textContent = "Connecting you to the nearest emergency response team. Please stay calm and wait for assistance.";
-            modalCloseBtn.style.display = 'none';
-            customModal.querySelector('.button').remove();
-            customModal.querySelector('.button').remove();
+        function showEmergencyCallModal() {
+            // Stop the main alarm and show a new modal
+            if (state.alarmInterval) {
+                clearInterval(state.alarmInterval);
+                state.alarmInterval = null;
+            }
+
+            modalTitle.textContent = "Emergency Services";
+            modalMessage.innerHTML = `<p class="mb-2 text-xl font-bold text-teal-400">Calling 911...</p><p>Please wait for an operator. State your location and situation clearly.</p>`;
+            
+            const oldButtons = customModal.querySelectorAll('button');
+            oldButtons.forEach(btn => btn.remove());
+
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = "OK";
+            closeBtn.className = "button mt-4";
+            closeBtn.onclick = () => closeCustomModal();
+            customModal.appendChild(closeBtn);
         }
+
 
         function switchTab(tabName) {
             tabContents.forEach(content => content.classList.remove('active'));
@@ -542,9 +660,12 @@
         }
 
         function updateForecastUI() {
-            forecast3hrEl.textContent = state.forecast.flood.h3.toFixed(2) + 'mm';
-            forecast6hrEl.textContent = state.forecast.flood.h6.toFixed(2) + 'mm';
-            forecast12hrEl.textContent = state.forecast.flood.h12.toFixed(2) + 'mm';
+            forecast3hrRainfallEl.textContent = state.forecast.rainfall.h3.toFixed(2) + 'mm';
+            forecast6hrRainfallEl.textContent = state.forecast.rainfall.h6.toFixed(2) + 'mm';
+            forecast12hrRainfallEl.textContent = state.forecast.rainfall.h12.toFixed(2) + 'mm';
+            forecast3hrFloodEl.textContent = state.forecast.flood.h3.toFixed(2) + 'm';
+            forecast6hrFloodEl.textContent = state.forecast.flood.h6.toFixed(2) + 'm';
+            forecast12hrFloodEl.textContent = state.forecast.flood.h12.toFixed(2) + 'm';
             updatePAGASAAdvisories();
         }
 
@@ -618,7 +739,8 @@
             });
 
             map.on('singleclick', function(event) {
-                map.forEachFeatureAtPixel(event.pixel, function(feature) {
+                // Use hitTolerance to make clicking on lines easier
+                map.forEachFeatureAtPixel(event.pixel, {hitTolerance: 5}, function(feature) {
                     const properties = feature.getProperties();
                     if (properties && properties.name) {
                         showCustomModal(properties.name, `Current Flood Height: ${properties.flood_level ? properties.flood_level.toFixed(2) : '0.00'}m`);
@@ -626,13 +748,19 @@
                 });
             });
 
-            loadAllRoads();
+            loadRoads();
         }
 
-        async function loadAllRoads() {
-            showCustomModal("Loading Roads...", "Please wait while we fetch detailed road data for Metro Manila. This may take a moment.", false);
-            
+        async function loadRoads() {
             const roadType = roadDetailSelect.value;
+            roadsLayer.getSource().clear();
+            if (roadType === 'none') {
+                 showTemporaryNotification("All roads have been removed.");
+                 return;
+            }
+            
+            showTemporaryNotification("Loading roads... Please wait.");
+            
             const latMin = 14.45;
             const lonMin = 120.95;
             const latMax = 14.75;
@@ -654,6 +782,14 @@
                 const features = [];
                 const roads = [];
                 const nodes = new Map(data.elements.filter(el => el.type === 'node').map(el => [el.id, el]));
+                
+                // Define special flood-prone areas with lower resistance
+                const floodProneAreas = {
+                    'Ermita, City of Manila': 0.1,
+                    'Paco, City of Manila': 0.1,
+                    'Malabon': 0.2,
+                    'Navotas': 0.2
+                };
 
                 data.elements.forEach(el => {
                     if (el.type === 'way' && el.tags && el.tags.name && el.nodes) {
@@ -664,28 +800,37 @@
 
                         if (coords.length > 1) {
                             let floodResistance = 0.5; // Default resistance
-                            switch (el.tags.highway) {
-                                case 'motorway':
-                                case 'trunk':
-                                case 'primary':
-                                    floodResistance = 0.8;
-                                    break;
-                                case 'secondary':
-                                case 'tertiary':
-                                    floodResistance = 0.6;
-                                    break;
-                                case 'residential':
-                                case 'service':
-                                    floodResistance = 0.3;
-                                    break;
+                            
+                            // Check for special flood-prone areas
+                            const areaName = el.tags.name;
+                            if (floodProneAreas[areaName]) {
+                                floodResistance = floodProneAreas[areaName];
+                            } else {
+                                switch (el.tags.highway) {
+                                    case 'motorway':
+                                    case 'trunk':
+                                    case 'primary':
+                                        floodResistance = 0.8;
+                                        break;
+                                    case 'secondary':
+                                    case 'tertiary':
+                                        floodResistance = 0.6;
+                                        break;
+                                    case 'residential':
+                                    case 'service':
+                                        floodResistance = 0.3;
+                                        break;
+                                }
                             }
+
                             const geojsonFeature = {
                                 type: "Feature",
                                 geometry: { type: "LineString", coordinates: coords },
                                 properties: { name: el.tags.name, highway: el.tags.highway, flood_level: 0, flood_resistance: floodResistance }
                             };
                             features.push(geojsonFeature);
-                            roads.push({ id: el.id, name: el.tags.name, coords: ol.proj.fromLonLat(coords[0]) });
+                            // Store road name and a single coordinate for the location select
+                            roads.push({ name: el.tags.name, coords: ol.proj.fromLonLat(coords[0]) });
                         }
                     }
                 });
@@ -701,11 +846,10 @@
                 
                 roadsLayer.setSource(accurateRoadsSource);
                 populateLocationSelect(roads);
-                closeCustomModal();
-                showCustomModal("Welcome!", "Please select your location from the Settings tab to begin. The flood simulation will be localized to your area.", true);
+                showTemporaryNotification("Roads have been loaded!");
             } catch (error) {
                 console.error("Failed to load road data:", error);
-                showCustomModal("Error", "Failed to load road data. Please check your network connection and try again.");
+                showTemporaryNotification("Error: Failed to load road data.");
             }
         }
         
@@ -716,8 +860,21 @@
             const locationSelect = document.getElementById('user-location-select');
             if (locationSelect) {
                 locationSelect.innerHTML = uniqueRoads.map(name => `<option value="${name}">${name}</option>`).join('');
+
+                // Check local storage for a previously saved location
+                const savedLocation = localStorage.getItem('userLocation');
+                if (savedLocation && uniqueRoads.includes(savedLocation)) {
+                    locationSelect.value = savedLocation;
+                    state.userLocation = savedLocation;
+                    const selectedRoad = roads.find(r => r.name === state.userLocation);
+                    updateLocationMarker(selectedRoad);
+                } else {
+                    localStorage.removeItem('userLocation'); // Clear invalid or old data
+                }
+
                 locationSelect.addEventListener('change', (e) => {
                     state.userLocation = e.target.value;
+                    localStorage.setItem('userLocation', state.userLocation); // Save location to local storage
                     resetSimulation();
                     const selectedRoad = roads.find(r => r.name === state.userLocation);
                     updateLocationMarker(selectedRoad);
@@ -740,29 +897,46 @@
         }
 
         // --- Simulation Logic ---
-        function getPrecipitationBySessionType(sessionType, timeInHours) {
-            const time = timeInHours;
+        function getPrecipitationBySessionType(sessionType, timeInHours, baseRate) {
             const totalDuration = state.simulationDuration / 3600;
-            const phaseLength = totalDuration / 3;
-            const timeInPhase = time % phaseLength;
-
-            switch(sessionType) {
-                case 'auto':
-                case 'rain':
-                    if (time < phaseLength) return 2 + (timeInPhase / phaseLength) * 10;
-                    if (time < phaseLength * 2) return 12 + (timeInPhase / phaseLength) * 5;
-                    return 17 - (timeInPhase / phaseLength) * 17;
-                case 'thunderstorm':
-                    if (time < phaseLength) return 5 + (timeInPhase / phaseLength) * 15;
-                    if (time < phaseLength * 2) return 20 + Math.sin(timeInPhase / phaseLength * Math.PI) * 40;
-                    return 20 - (timeInPhase / phaseLength) * 20;
-                case 'tropical-cyclone':
-                    if (time < phaseLength) return 15 + (timeInPhase / phaseLength) * 25;
-                    if (time < phaseLength * 2) return 40 + (timeInPhase / phaseLength) * 60;
-                    return 100 - (timeInPhase / phaseLength) * 100;
-                default:
-                    return 0;
+            const timeRatio = timeInHours / totalDuration;
+            
+            let rate = baseRate;
+            if (sessionType === 'normal') {
+                rate = baseRate;
+            } else if (sessionType === 'rain') {
+                rate = baseRate + 10 * Math.sin(timeRatio * Math.PI);
+            } else if (sessionType === 'thunderstorm') {
+                rate = baseRate + 35 * Math.sin(timeRatio * Math.PI) * Math.sin(timeRatio * 4 * Math.PI);
+            } else if (sessionType === 'tropical-cyclone') {
+                rate = baseRate + 85 * Math.sin(timeRatio * Math.PI);
             }
+            return Math.max(0, rate);
+        }
+        
+        function drawPrecipitationGraph() {
+            const data = state.precipitationHistory;
+            const maxVal = Math.max(...data, 10);
+            const w = precipitationGraph.width;
+            const h = precipitationGraph.height;
+            const barWidth = w / data.length;
+
+            graphCtx.clearRect(0, 0, w, h);
+            
+            // Draw axes
+            graphCtx.strokeStyle = '#4a5568';
+            graphCtx.lineWidth = 1;
+            graphCtx.beginPath();
+            graphCtx.moveTo(0, h);
+            graphCtx.lineTo(w, h);
+            graphCtx.stroke();
+            
+            // Draw bars
+            graphCtx.fillStyle = '#0d9488';
+            data.forEach((val, i) => {
+                const barHeight = (val / maxVal) * h;
+                graphCtx.fillRect(i * barWidth, h - barHeight, barWidth, barHeight);
+            });
         }
 
         function parseDurationInput() {
@@ -788,6 +962,48 @@
                 showCustomModal('Simulation Started', `Starting a new ${sessionTypeSelect.value} simulation for ${simulationDurationInput.value} ${durationUnitSelect.value}.`);
             }
         }
+        
+        function runInstantSimulation() {
+            stopSimulation();
+            state.simulationDuration = parseDurationInput();
+            state.precipitationHistory = [];
+            
+            let totalPrecipitation = 0;
+            let floodHeight = 0;
+            let lastPrecipitationRate = 0;
+            
+            for(let t = 0; t < state.simulationDuration; t++) {
+                let currentPrecipitation = getPrecipitationBySessionType(state.sessionType, t / 3600, state.precipitationRate);
+                 if (randomPrecipitationCheckbox.checked) {
+                    currentPrecipitation += (Math.random() - 0.5) * 2;
+                }
+                currentPrecipitation = Math.max(0, currentPrecipitation);
+
+                totalPrecipitation += currentPrecipitation / 3600;
+                floodHeight += (currentPrecipitation / 3600) * 0.02; // Increased flood factor
+                lastPrecipitationRate = currentPrecipitation;
+                state.precipitationHistory.push(currentPrecipitation);
+            }
+            
+            state.totalPrecipitation = totalPrecipitation;
+            state.currentFloodHeight = floodHeight;
+            state.precipitationRate = lastPrecipitationRate;
+            
+            const features = roadsLayer.getSource().getFeatures();
+            features.forEach(feature => {
+                const floodResistance = feature.get('flood_resistance');
+                const newFloodLevel = state.currentFloodHeight * (1 - floodResistance);
+                feature.set('flood_level', newFloodLevel);
+            });
+            roadsLayer.changed();
+            
+            updateUI();
+            updateForecasts();
+            checkWarningStatus();
+            drawPrecipitationGraph();
+            
+            showCustomModal('Instant Results', `Simulation for ${simulationDurationInput.value} ${durationUnitSelect.value} completed instantly. Final flood height is ${state.currentFloodHeight.toFixed(2)}m.`);
+        }
 
         function stopSimulation() {
             state.isSimulationRunning = false;
@@ -806,10 +1022,9 @@
                 return;
             }
             
-            const rawPrecipitation = getPrecipitationBySessionType(state.sessionType, state.simulationTime / 3600);
-            let currentPrecipitation = rawPrecipitation;
+            let currentPrecipitation = getPrecipitationBySessionType(state.sessionType, state.simulationTime / 3600, state.precipitationRate);
             if (randomPrecipitationCheckbox.checked) {
-                currentPrecipitation += (Math.random() - 0.5) * 5;
+                currentPrecipitation += (Math.random() - 0.5) * 2;
                 currentPrecipitation = Math.max(0, currentPrecipitation);
             }
             
@@ -820,19 +1035,22 @@
             state.forecast.humidity += (currentPrecipitation / 1000);
             state.forecast.temp = Math.max(20, Math.min(35, state.forecast.temp));
             state.forecast.humidity = Math.max(50, Math.min(100, state.forecast.humidity));
+            
+            // Increment the overall flood height for the entire location
+            let floodIncrement = (currentPrecipitation / 3600) * 0.02; // Increased flood factor
+            state.currentFloodHeight += floodIncrement;
+            
+            state.precipitationHistory.push(currentPrecipitation);
+            if (state.precipitationHistory.length > 300) { // Keep history manageable
+                state.precipitationHistory.shift();
+            }
+            drawPrecipitationGraph();
 
             const features = roadsLayer.getSource().getFeatures();
             features.forEach(feature => {
-                let floodIncrement = 0;
                 const floodResistance = feature.get('flood_resistance');
-                
-                if (state.userLocation === 'Entire Metro Manila' || feature.get('name') === state.userLocation) {
-                    floodIncrement = (currentPrecipitation / 3600) * (1 - floodResistance) * 0.005; // Drastically reduced for realism
-                    state.currentFloodHeight += floodIncrement;
-                    feature.set('flood_level', state.currentFloodHeight);
-                } else {
-                    feature.set('flood_level', 0);
-                }
+                const newFloodLevel = state.currentFloodHeight * (1 - floodResistance);
+                feature.set('flood_level', newFloodLevel);
             });
             roadsLayer.changed();
             
@@ -841,18 +1059,44 @@
             updateForecasts();
 
             // Check for evacuation alert trigger
-            if (state.currentFloodHeight >= 0.5 && !state.alertTriggered) {
+            if (state.currentFloodHeight >= state.alarmHeight && !state.alertTriggered) {
                 state.alertTriggered = true;
-                state.alertSound.triggerAttackRelease("C4", "8n");
                 showEvacuationModal();
             }
         }
         
+        function calculateForecasts(hoursAhead) {
+            const timeInHours = state.simulationTime / 3600;
+            const futureTime = timeInHours + hoursAhead;
+            let totalPrecipitation = 0;
+            let floodHeight = state.currentFloodHeight;
+
+            for (let i = timeInHours; i < futureTime; i += 1/3600) {
+                let currentPrecip = getPrecipitationBySessionType(state.sessionType, i, state.precipitationRate);
+                currentPrecip += (Math.random() - 0.5) * 2;
+                currentPrecip = Math.max(0, currentPrecip);
+                totalPrecipitation += currentPrecip / 3600;
+                floodHeight += (currentPrecip / 3600) * 0.02; // Increased flood factor
+            }
+            return {
+                rainfall: totalPrecipitation,
+                flood: floodHeight
+            };
+        }
+        
         function updateForecasts() {
-            const time = state.simulationTime / 3600;
-            state.forecast.flood.h3 = getPrecipitationBySessionType(state.sessionType, time + 3) * 3;
-            state.forecast.flood.h6 = getPrecipitationBySessionType(state.sessionType, time + 6) * 6;
-            state.forecast.flood.h12 = getPrecipitationBySessionType(state.sessionType, time + 12) * 12;
+            const forecast3hr = calculateForecasts(3);
+            const forecast6hr = calculateForecasts(6);
+            const forecast12hr = calculateForecasts(12);
+
+            state.forecast.rainfall.h3 = forecast3hr.rainfall;
+            state.forecast.rainfall.h6 = forecast6hr.rainfall;
+            state.forecast.rainfall.h12 = forecast12hr.rainfall;
+
+            state.forecast.flood.h3 = forecast3hr.flood;
+            state.forecast.flood.h6 = forecast6hr.flood;
+            state.forecast.flood.h12 = forecast12hr.flood;
+
             updateForecastUI();
         }
 
@@ -934,9 +1178,7 @@
             state.lastRainfallWarning = 'None';
             state.lastTcwsWarning = 'None';
             precipitationRateInput.value = 0;
-            precipitationValueEl.textContent = 0;
-            state.forecast.temp = 28;
-            state.forecast.humidity = 75;
+            state.precipitationHistory = [];
             
             currentFloodHeightEl.textContent = '0.00';
             totalPrecipitationEl.textContent = '0.00';
@@ -947,7 +1189,40 @@
             roadsLayer.changed();
             updateUI();
             updateForecasts();
+            drawPrecipitationGraph();
             showCustomModal('Simulation Reset', 'The simulation has been reset to its initial state.');
+        }
+
+        function testAlarm() {
+            // Start a looping sound for the alarm test
+            if (!state.alarmInterval) {
+                state.alarmInterval = setInterval(() => {
+                    state.alertSound.triggerAttackRelease("C4", "8n");
+                }, 1000);
+            }
+            showCustomModal("Alarm Test", "The alarm has been successfully triggered. Close this modal to stop the sound.");
+        }
+        
+        function testAlarmAndWarning() {
+            // Store original values to restore them later
+            const originalFloodHeight = state.currentFloodHeight;
+            const originalPrecipRate = state.precipitationRate;
+            
+            // Set values to trigger the alarm and a "Red" warning
+            state.currentFloodHeight = state.alarmHeight + 0.1;
+            state.precipitationRate = 35; 
+            
+            // Trigger the warning and alarm logic
+            checkWarningStatus();
+            updateUI();
+            showEvacuationModal();
+
+            // Reset values after a short delay
+            setTimeout(() => {
+                state.currentFloodHeight = originalFloodHeight;
+                state.precipitationRate = originalPrecipRate;
+                updateUI();
+            }, 3000);
         }
 
         // --- Event Listeners and Initialization ---
@@ -962,27 +1237,40 @@
                 button.addEventListener('click', () => switchTab(button.dataset.tab));
             });
             startSimulationBtn.addEventListener('click', startSimulation);
+            runInstantBtn.addEventListener('click', runInstantSimulation);
             resetSimulationBtn.addEventListener('click', resetSimulation);
+            testAlarmBtn.addEventListener('click', testAlarm);
+            testAlarmWarningBtn.addEventListener('click', testAlarmAndWarning);
+
             precipitationRateInput.addEventListener('input', (e) => {
                 state.precipitationRate = parseInt(e.target.value);
                 precipitationValueEl.textContent = state.precipitationRate;
             });
+            
+            alarmHeightInput.addEventListener('input', (e) => {
+                state.alarmHeight = parseFloat(e.target.value);
+                alarmHeightValueEl.textContent = state.alarmHeight.toFixed(1);
+            });
+
             sessionTypeSelect.addEventListener('change', (e) => {
                 state.sessionType = e.target.value;
-                if (state.sessionType === 'auto') { randomPrecipitationCheckbox.checked = true; }
+                if (state.sessionType === 'normal') { randomPrecipitationCheckbox.checked = true; }
             });
             roadDetailSelect.addEventListener('change', () => {
                 resetSimulation();
-                loadAllRoads();
+                loadRoads();
             });
             toggleRainfallWarningsBtn.addEventListener('click', () => toggleMapLayer('rainfall'));
             toggleTcwsBtn.addEventListener('click', () => toggleMapLayer('tcws'));
             toggleLocationMarkerBtn.addEventListener('click', () => toggleMapLayer('locationMarker'));
+            // The modal close button now handles stopping the alarm
             modalCloseBtn.addEventListener('click', closeCustomModal);
             
             initializeMap();
             setInterval(updateClockDisplay, 1000);
             updateClockDisplay();
+            drawPrecipitationGraph();
+            showCustomModal('Welcome!', 'Please select your location from the Settings tab to begin. The flood simulation will be localized to your area.', { isWelcome: true });
         }
 
         document.addEventListener('DOMContentLoaded', initializeApp);
